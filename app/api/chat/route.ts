@@ -1,13 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { getChatCompletion } from "@/lib/aiProvider/ollama";
+import { MENTOR_SYSTEM_PROMPT } from "@/lib/prompts/mentor";
+import { ChatRequestBody, ChatResponseBody } from "@/lib/types";
+import { ROLES } from "@/lib/constant";
 
 export async function POST(req: NextRequest) {
-    const body = await req.json().catch(() => ({}));
-    //   ai will be implemented here in the future to generate a response based on the user's message
+    const body: ChatRequestBody = await req.json().catch(() => ({ messages: [] }));
 
-    return NextResponse.json({
-        success: true,
-        method: 'POST',
-        body,
-        receivedAt: new Date().toISOString(),
-    });
+    if (!body.messages || body.messages.length === 0) {
+        return NextResponse.json({ error: "messages is required" }, { status: 400 });
+    }
+
+    const messagesWithSystem = [
+        {
+            role: ROLES.SYSTEM,
+            content: MENTOR_SYSTEM_PROMPT
+        },
+        ...body.messages,
+    ];
+
+    try {
+        const reply = await getChatCompletion(messagesWithSystem);
+        const responseBody: ChatResponseBody = { reply };
+        return NextResponse.json(responseBody);
+    } catch (error) {
+        console.error("Chat API error:", error);
+        return NextResponse.json({ error: "Failed to get AI response" }, { status: 500 });
+    }
 }
