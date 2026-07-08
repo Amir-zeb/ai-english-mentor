@@ -1,9 +1,9 @@
-import { ChatMessage } from "@/lib/types";
+import { ConversationMessageT } from "@/lib/types";
 
 const OLLAMA_URL = process.env.OLLAMA_URL ?? "http://localhost:11434";
 const MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b";
 
-export async function getChatCompletion(messages: ChatMessage[]): Promise<string> {
+export async function getChatCompletion(messages: ConversationMessageT[]): Promise<string> {
     const response = await fetch(`${OLLAMA_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
