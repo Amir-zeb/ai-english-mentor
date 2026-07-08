@@ -1,24 +1,21 @@
+import { ROLES } from "@/lib/constant";
+import { sendMessage } from "@/lib/services/chat.service";
+import { ChatMessage } from "@/lib/types";
 import { useEffect, useRef, useState } from "react";
 
-type ChatProps = {
+export type ChatProps = {
     title?: string;
 };
 
-type ChatSideBarProps = {
+export type ChatSideBarProps = {
     title?: string;
     history?: string[];
-};
-
-type Message = {
-    id: number;
-    sender: "user" | "assistant";
-    text: string;
 };
 
 // this component will be generic for any mentor, and will be passed the title of the mentor and the conversation history as props later.
 function Chat({ title }: ChatProps) {
 
-    const [messages, setMessages] = useState<Message[]>([]);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState<string>("");
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const bottomRef = useRef<HTMLDivElement>(null);
@@ -36,30 +33,16 @@ function Chat({ title }: ChatProps) {
 
         if (!input.trim()) return;
 
-        const userMessage: Message = {
-            id: Date.now(),
-            sender: "user",
-            text: input.trim(),
+        const userMessage: ChatMessage = {
+            role: ROLES.USER,
+            content: input.trim(),
         };
-
         setMessages((prev) => [...prev, userMessage]);
-        setInput("");
         setIsTyping(true);
+        setInput("");
 
         try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ message: input.trim() }),
-            });
-            const data = await response.json();
-            const assistantReply: Message = {
-                id: Date.now() + 1,
-                sender: "assistant",
-                text: data.reply,
-            };
+            const assistantReply = await sendMessage([...messages, userMessage]);
             setMessages((prev) => [...prev, assistantReply]);
         } catch (error) {
             console.error('Error sending message:', error);
@@ -73,32 +56,14 @@ function Chat({ title }: ChatProps) {
             <ChatSidebar title={title} history={['History Item 1', 'History Item 2']} />
             <div className="flex flex-1 flex-col min-h-screen overflow-hidden overflow-y-auto p-4">
                 <section className="flex flex-1 flex-col gap-4 overflow-y-auto">
-                    {messages.length ? messages.map((message) => (
-                        <div
-                            key={message.id}
-                            className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
-                        >
-                            <div
-                                className={`max-w-[80%] text-sm sm:max-w-[70%] ${message.sender === "user"
-                                    ? "bg-slate-800/90 text-white rounded-2xl px-4 py-3 shadow-md"
-                                    : ""
-                                    }`}
-                            >
-                                <p>{message.text}</p>
-                            </div>
-                        </div>
+                    {messages.length ? messages.map((message, i) => (
+                        <Message key={i} message={message} />
                     )) :
                         <div>
                             <p className="text-center">No messages yet. Start the conversation!</p>
                         </div>
                     }
-                    {isTyping && (
-                        <div className="flex items-center gap-2">
-                            <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-white" />
-                            <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-white [animation-delay:0.15s]" />
-                            <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-white [animation-delay:0.3s]" />
-                        </div>
-                    )}
+                    {isTyping && <TypingIndicator />}
                     <div ref={bottomRef} className='visibility:hidden' />
                 </section>
                 <form onSubmit={handleSend} className="border-t border-white/10 py-4">
@@ -139,4 +104,31 @@ const ChatSidebar = ({ title = 'Mentor', history = [] }: ChatSideBarProps) => {
             </div>
         </div>
     )
+}
+
+function TypingIndicator() {
+    return (
+        <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-white" />
+            <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-white [animation-delay:0.15s]" />
+            <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-white [animation-delay:0.3s]" />
+        </div>
+    );
+}
+
+function Message({ message }: { message: ChatMessage }) {
+    return (
+        <div
+            className={`flex ${message.role === ROLES.USER ? "justify-end" : "justify-start"}`}
+        >
+            <div
+                className={`max-w-[80%] text-sm sm:max-w-[70%] ${message.role === ROLES.USER
+                    ? "bg-slate-800/90 text-white rounded-2xl px-4 py-3 shadow-md"
+                    : ""
+                    }`}
+            >
+                <p>{message.content}</p>
+            </div>
+        </div>
+    );
 }
