@@ -1,28 +1,39 @@
+'use client';
 import { ROLES } from "@/lib/constant";
 import { sendMessage } from "@/lib/services/chat.service";
-import { ChatMessage } from "@/lib/types";
+import { ChatSideBarProps, ConversationMessageT, ConversationSummaryT } from "@/lib/types";
 import { useEffect, useRef, useState } from "react";
+import { getConversationMessages, getConversations } from "@/lib/services/conversationService";
 
 export type ChatProps = {
     title?: string;
 };
 
-export type ChatSideBarProps = {
-    title?: string;
-    history?: string[];
-};
-
 // this component will be generic for any mentor, and will be passed the title of the mentor and the conversation history as props later.
 function Chat({ title }: ChatProps) {
 
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [messages, setMessages] = useState<ConversationMessageT[]>([]);
     const [input, setInput] = useState<string>("");
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const bottomRef = useRef<HTMLDivElement>(null);
+    const [conversations, setConversations] = useState<ConversationSummaryT[]>([]);
+    const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+
+    useEffect(() => {
+        getConversations()
+            .then(setConversations)
+            .catch((err) => console.error("Failed to load conversations:", err));
+    }, []);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, isTyping]);
+
+    const handleNewConversation = () => {
+        setActiveConversationId(null);
+        setMessages([]);
+        setInput("");
+    };
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setInput(event.target.value);
@@ -33,7 +44,7 @@ function Chat({ title }: ChatProps) {
 
         if (!input.trim()) return;
 
-        const userMessage: ChatMessage = {
+        const userMessage: ConversationMessageT = {
             role: ROLES.USER,
             content: input.trim(),
         };
@@ -51,9 +62,37 @@ function Chat({ title }: ChatProps) {
         }
     };
 
+    const handleSelectConversation = async (id: string) => {
+        if (id === activeConversationId) return; // no-op if already active
+
+        setActiveConversationId(id);
+        setIsTyping(true); // reuse this as a lightweight loading indicator
+
+        try {
+            const data = await getConversationMessages(id);
+            const loadedMessages: ConversationMessageT[] = data.messages.map((m, index) => ({
+                role: m.role,
+                content: m.content,
+                createdAt: m.createdAt,
+            }));
+            setMessages(loadedMessages);
+        } catch (error) {
+            console.error("Failed to load conversation:", error);
+            setMessages([]);
+        } finally {
+            setIsTyping(false);
+        }
+    };
+
     return (
         <div className="flex w-full h-screen flex-row overflow-hidden">
-            <ChatSidebar title={title} history={['History Item 1', 'History Item 2']} />
+            <ChatSidebar
+                title={title}
+                history={conversations}
+                activeConversationId={activeConversationId}
+                onSelectConversation={handleSelectConversation}
+                onNewConversation={handleNewConversation}
+            />
             <div className="flex flex-1 flex-col min-h-screen overflow-hidden overflow-y-auto p-4">
                 <section className="flex flex-1 flex-col gap-4 overflow-y-auto">
                     {messages.length ? messages.map((message, i) => (
@@ -89,16 +128,36 @@ function Chat({ title }: ChatProps) {
 
 export default Chat;
 
-const ChatSidebar = ({ title = 'Mentor', history = [] }: ChatSideBarProps) => {
+const ChatSidebar = ({
+    title = 'Mentor',
+    history = [],
+    activeConversationId,
+    onSelectConversation,
+    onNewConversation,
+}: ChatSideBarProps) => {
     return (
         <div className="flex w-64 flex-col border-r border-white/10">
             <div className="p-2 border-b border-white/10">
                 <h4 className="text-center text-lg font-bold">{title}</h4>
             </div>
             <div className="flex-1 p-4 overflow-y-auto overflow-x-hidden">
-                <ul>
-                    {history.map((item, index) => (
-                        <li key={index}>{item}</li>
+                <ul className="flex flex-col gap-1">
+                    <li
+                        onClick={() => onNewConversation?.()}
+                        className={`cursor-pointer truncate rounded-lg px-3 py-2 text-sm hover:bg-white/10 ${activeConversationId === null ? "bg-white/10" : ""
+                            }`}
+                    >
+                        + Start a new conversation
+                    </li>
+                    {history.map((conv) => (
+                        <li
+                            key={conv._id}
+                            onClick={() => onSelectConversation?.(conv._id)}
+                            className={`cursor-pointer truncate rounded-lg px-3 py-2 text-sm hover:bg-white/10 ${conv._id === activeConversationId ? "bg-white/10" : ""
+                                }`}
+                        >
+                            {conv.title}
+                        </li>
                     ))}
                 </ul>
             </div>
@@ -116,7 +175,7 @@ function TypingIndicator() {
     );
 }
 
-function Message({ message }: { message: ChatMessage }) {
+function Message({ message }: { message: ConversationMessageT }) {
     return (
         <div
             className={`flex ${message.role === ROLES.USER ? "justify-end" : "justify-start"}`}
