@@ -1,7 +1,7 @@
 import { ROLES } from "../constant";
-import { ChatMessage } from "../types";
+import { ConversationMessageT } from "../types";
 
-export async function sendMessage(messages: ChatMessage[]): Promise<ChatMessage> {
+export async function sendMessage(messages: ConversationMessageT[]): Promise<ConversationMessageT> {
     const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -9,7 +9,7 @@ export async function sendMessage(messages: ChatMessage[]): Promise<ChatMessage>
     });
 
     const data = await response.json();
-    const assistantReply: ChatMessage = {
+    const assistantReply: ConversationMessageT = {
         role: ROLES.ASSISTANT,
         content: data.reply,
     };
