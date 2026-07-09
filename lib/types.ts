@@ -10,14 +10,6 @@ export type ConversationSummaryT = {
     updatedAt: string;
 };
 
-export type ChatSideBarProps = {
-    title?: string;
-    history?: ConversationSummaryT[];
-    activeConversationId?: string | null;
-    onSelectConversation?: (id: string) => void;
-    onNewConversation?: () => void;
-};
-
 export type ConversationMessageT = {
     role: ChatRole;
     content: string;

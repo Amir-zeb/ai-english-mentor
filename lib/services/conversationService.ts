@@ -17,6 +17,20 @@ export async function getConversationMessages(id: string): Promise<ConversationD
     return response.json();
 }
 
+export async function deleteConversationMessages(id: string): Promise<any> {
+    const response = await fetch(`/api/conversations/${id}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ conversationId: id }),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+    if (!response.ok) {
+        throw new Error("Failed to delete conversation messages");
+    }
+    return response.json();
+}
+
 export async function createConversationHistory(title: string): Promise<ConversationDetailT> {
     const response = await fetch(`/api/conversations`, {
         method: 'POST',
