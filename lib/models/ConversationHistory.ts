@@ -10,7 +10,7 @@ export interface IConversationHistory {
 
 const ConversationHistorySchema = new Schema<IConversationHistory>(
     {
-        title: { type: String, default: "New conversation" },
+        title: { type: String, default: "New conversation", trim: true, required: true },
         model: { type: String, required: true },
     },
     { timestamps: true }

@@ -12,7 +12,7 @@ const MessageSchema = new Schema<IMessage>(
     {
         conversationId: { type: Schema.Types.ObjectId, ref: "Conversation", required: true },
         role: { type: String, enum: ["user", "assistant", "system"], required: true },
-        content: { type: String, required: true },
+        content: { type: String, required: true, trim: true },
     },
     { timestamps: { createdAt: true, updatedAt: false } }
 );
