@@ -63,8 +63,13 @@ export async function POST(req: NextRequest) {
 
         conversation.updatedAt = new Date();
         await conversation.save();
-
-        const responseBody: ChatResponseBody = newMessage;
+        const responseBody: ChatResponseBody = {
+            role: newMessage.role,
+            content: newMessage.content,
+            conversationId: conversationId as string,
+            createdAt: newMessage.createdAt.toISOString(),
+        };
+        return NextResponse.json(responseBody);
         return NextResponse.json(responseBody);
     } catch (error) {
         console.error("Chat API error:", error);

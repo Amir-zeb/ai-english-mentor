@@ -2,18 +2,19 @@
 import { useEffect, useRef, useState } from "react";
 import { sendMessage } from "@/lib/services/chat.service";
 import { getConversationMessages, getConversations } from "@/lib/services/conversationService";
-import ChatMessage from "./ChatMessage";
-import TypingIndicator from "./TypingIndicator";
+import ChatMessage from "./chatMessage";
+import TypingIndicator from "./typingIndicator";
 import { ConversationMessageT, ConversationSummaryT } from "@/lib/types";
 import { ROLES } from "@/lib/constant";
-import ChatSidebar from "./ChatSidebar";
-import ChatForm from "./ChatForm";
+import ChatSidebar from "./chatSidebar";
+import ChatForm from "./chatForm";
+import { toast } from "sonner";
 
 export type ChatProps = {
     title?: string;
 };
 
-// this component will be generic for any mentor, and will be passed the title of the mentor and the conversation history as props later.
+// this component will be generic for any mentor, and will be implemented later.
 function Chat({ title }: ChatProps) {
 
     const [messages, setMessages] = useState<ConversationMessageT[]>([]);
@@ -30,7 +31,7 @@ function Chat({ title }: ChatProps) {
     const getConversationHistory = () => {
         getConversations()
             .then(setConversations)
-            .catch((err) => console.error("Failed to load conversations:", err));
+            .catch((err) => toast.error(err instanceof Error ? err.message : "Couldn't refresh conversation list"));
     }
 
     useEffect(() => {
@@ -68,7 +69,7 @@ function Chat({ title }: ChatProps) {
                 getConversationHistory();
             }
         } catch (error) {
-            console.error('Error sending message:', error);
+            toast.error(error instanceof Error ? error.message : "Failed to send message. Please try again.");
         } finally {
             setIsTyping(false);
         }
@@ -89,7 +90,7 @@ function Chat({ title }: ChatProps) {
             }));
             setMessages(loadedMessages);
         } catch (error) {
-            console.error("Failed to load conversation:", error);
+            toast.error(error instanceof Error ? error.message : "Failed to load conversation");
             setMessages([]);
         } finally {
             setIsTyping(false);
@@ -105,7 +106,7 @@ function Chat({ title }: ChatProps) {
                 onSelectConversation={handleSelectConversation}
                 onNewConversation={handleNewConversation}
             />
-            <div className="flex flex-1 flex-col min-h-screen overflow-hidden overflow-y-auto p-4">
+            <div className="flex flex-1 flex-col min-h-screen overflow-hidden overflow-y-auto p-4 pb-0">
                 <section className="flex flex-1 flex-col gap-4 overflow-y-auto">
                     {messages.length ? messages.map((message, i) => (
                         <ChatMessage key={i} message={message} />

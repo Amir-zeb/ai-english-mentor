@@ -3,7 +3,7 @@ import { ConversationDetailT, ConversationSummaryT } from "../types";
 export async function getConversations(): Promise<ConversationSummaryT[]> {
     const response = await fetch("/api/conversations");
     if (!response.ok) {
-        throw new Error("Failed to fetch conversations");
+        throw new Error("Failed to fetch conversation history");
     }
     const data = await response.json();
     return data.conversations;
@@ -12,7 +12,7 @@ export async function getConversations(): Promise<ConversationSummaryT[]> {
 export async function getConversationMessages(id: string): Promise<ConversationDetailT> {
     const response = await fetch(`/api/conversations/${id}`);
     if (!response.ok) {
-        throw new Error("Failed to fetch conversation");
+        throw new Error("Failed to fetch conversation messages");
     }
     return response.json();
 }
@@ -26,7 +26,8 @@ export async function createConversationHistory(title: string): Promise<Conversa
         }),
     });
     if (!response.ok) {
-        throw new Error("Failed to create conversation history");
+        const data = await response.json();
+        throw new Error(data.error || "Failed to create conversation history");
     }
     return response.json();
 }

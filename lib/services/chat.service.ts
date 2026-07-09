@@ -1,7 +1,6 @@
-import { ROLES } from "../constant";
-import { ConversationMessageT } from "../types";
+import { ChatResponseBody } from "../types";
 
-export async function sendMessage(conversationId: string | null, message: string): Promise<ConversationMessageT> {
+export async function sendMessage(conversationId: string | null, message: string): Promise<ChatResponseBody> {
     const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -9,9 +8,9 @@ export async function sendMessage(conversationId: string | null, message: string
     });
 
     if (!response.ok) {
-        throw new Error('Failed to send message');
+        const data = await response.json();
+        throw new Error(data.error || "Failed to send message. Please try again.");
     }
 
-    const data = await response.json();
-    return data;
+    return response.json();
 }
