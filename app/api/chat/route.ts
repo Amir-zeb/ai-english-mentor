@@ -1,27 +1,70 @@
 import { NextRequest, NextResponse } from "next/server";
+import { connectDB } from "@/lib/db/connect";
+import { Messages } from "@/lib/models/Messages";
+import { ConversationHistory } from "@/lib/models/ConversationHistory";
 import { getChatCompletion } from "@/lib/aiProvider/ollama";
 import { MENTOR_SYSTEM_PROMPT } from "@/lib/prompts/mentor";
-import { ChatRequestBody, ChatResponseBody } from "@/lib/types";
 import { ROLES } from "@/lib/constant";
+import { ChatRequestBodyT, ChatResponseBody, ConversationMessageT } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
-    const body: ChatRequestBody = await req.json().catch(() => ({ messages: [] }));
+    const body: ChatRequestBodyT = await req.json().catch(() => ({} as ChatRequestBodyT));
+    const { message } = body;
+    let { conversationId } = body;
+    let history: ConversationMessageT[] = [];
 
-    if (!body.messages || body.messages.length === 0) {
-        return NextResponse.json({ error: "messages is required" }, { status: 400 });
+    if (!message) {
+        return NextResponse.json({ error: "Message is required" }, { status: 400 });
     }
 
-    const messagesWithSystem = [
-        {
-            role: ROLES.SYSTEM,
-            content: MENTOR_SYSTEM_PROMPT
-        },
-        ...body.messages,
+    await connectDB();
+
+    let conversation = conversationId
+        ? await ConversationHistory.findById(conversationId)
+        : null;
+
+    if (!conversation) {
+        const MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b";
+        conversation = await ConversationHistory.create({
+            title: message.trim().slice(0, 100),
+            model: MODEL,
+        });
+        conversationId = conversation._id.toString();
+    } else {
+        // fetch existing history for this conversation
+        history = await Messages.find({ conversationId })
+            .sort({ createdAt: 1 })
+            .select("role content")
+            .lean();
+    }
+
+    // save the user's new message
+    await Messages.create({
+        conversationId,
+        role: ROLES.USER,
+        content: message,
+    });
+
+    // build full message list for the AI call
+    const messagesForAI: ConversationMessageT[] = [
+        { role: ROLES.SYSTEM, content: MENTOR_SYSTEM_PROMPT },
+        ...history.map((m) => ({ role: m.role, content: m.content } as ConversationMessageT)),
+        { role: ROLES.USER, content: message },
     ];
 
     try {
-        const reply = await getChatCompletion(messagesWithSystem);
-        const responseBody: ChatResponseBody = { reply };
+        const reply = await getChatCompletion(messagesForAI);
+
+        const newMessage = await Messages.create({
+            conversationId,
+            role: ROLES.ASSISTANT,
+            content: reply,
+        });
+
+        conversation.updatedAt = new Date();
+        await conversation.save();
+
+        const responseBody: ChatResponseBody = newMessage;
         return NextResponse.json(responseBody);
     } catch (error) {
         console.error("Chat API error:", error);
