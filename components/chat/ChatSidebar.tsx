@@ -1,11 +1,26 @@
-import { ChatSideBarProps } from "@/lib/types";
+import { MdOutlineDeleteOutline } from "react-icons/md";
+import { ConversationSummaryT } from "@/lib/types";
+import { toast } from "sonner";
 
-export default function ChatSidebar ({
+type IDParamFunctionT = (id: string) => void;
+type VoidFunctionT = () => void;
+
+export type ChatSideBarProps = {
+    title?: string;
+    history?: ConversationSummaryT[];
+    activeConversationId?: string | null;
+    onSelectConversation?: IDParamFunctionT;
+    onNewConversation?: VoidFunctionT;
+    onDeleteConversation?: IDParamFunctionT;
+};
+
+export default function ChatSidebar({
     title = 'Mentor',
     history = [],
     activeConversationId,
     onSelectConversation,
     onNewConversation,
+    onDeleteConversation
 }: ChatSideBarProps) {
     return (
         <div className="flex w-64 flex-col border-r border-white/10">
@@ -19,20 +34,64 @@ export default function ChatSidebar ({
                         className={`cursor-pointer truncate rounded-lg px-3 py-2 text-sm hover:bg-white/10 ${activeConversationId === null ? "bg-white/10" : ""
                             }`}
                     >
-                        + Start a new conversation
+                        New chat
                     </li>
                     {history.map((conv) => (
-                        <li
+                        <ListItem
                             key={conv._id}
-                            onClick={() => onSelectConversation?.(conv._id)}
-                            className={`cursor-pointer truncate rounded-lg px-3 py-2 text-sm hover:bg-white/10 ${conv._id === activeConversationId ? "bg-white/10" : ""
-                                }`}
-                        >
-                            {conv.title}
-                        </li>
+                            conv={conv}
+                            activeConversationId={activeConversationId}
+                            onSelectConversation={onSelectConversation}
+                            onDeleteConversation={onDeleteConversation}
+                        />
                     ))}
                 </ul>
             </div>
         </div>
     )
+}
+
+function ListItem({ conv, activeConversationId, onSelectConversation, onDeleteConversation }: {
+    conv: ConversationSummaryT;
+    activeConversationId?: string | null;
+    onSelectConversation?: IDParamFunctionT;
+    onDeleteConversation?: IDParamFunctionT;
+}) {
+    const handleDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+        toast('Delete this conversation?', {
+            description: conv.title,
+            action: {
+                label: 'Delete',
+                onClick: () => onDeleteConversation?.(conv._id),
+            },
+            cancel: {
+                label: 'Cancel',
+                onClick: () => {},
+            },
+        });
+    }
+
+    return (
+        <li
+            className={`group relative flex items-center rounded-lg text-sm hover:bg-white/10 ${
+                conv._id === activeConversationId ? "bg-white/10" : ""
+            }`}
+        >
+            <button
+                type="button"
+                onClick={() => onSelectConversation?.(conv._id)}
+                className="flex-1 truncate px-3 py-2 text-left"
+            >
+                {conv.title}
+            </button>
+            <button
+                type="button"
+                onClick={handleDelete}
+                className="mr-1 rounded-lg p-1 text-white/50 opacity-0 transition hover:text-red-400 group-hover:opacity-100"
+            >
+                <MdOutlineDeleteOutline />
+            </button>
+        </li>
+    );
 }
