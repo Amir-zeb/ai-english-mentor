@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from "react";
 import { sendMessage } from "@/lib/services/chat.service";
-import { getConversationMessages, getConversations } from "@/lib/services/conversationService";
+import { deleteConversationMessages, getConversationMessages, getConversations } from "@/lib/services/conversationService";
 import ChatMessage from "./chatMessage";
 import TypingIndicator from "./typingIndicator";
 import { ConversationMessageT, ConversationSummaryT } from "@/lib/types";
@@ -9,6 +9,7 @@ import { ROLES } from "@/lib/constant";
 import ChatSidebar from "./chatSidebar";
 import ChatForm from "./chatForm";
 import { toast } from "sonner";
+import Loader from "../loader/loader";
 
 export type ChatProps = {
     title?: string;
@@ -20,6 +21,7 @@ function Chat({ title }: ChatProps) {
     const [messages, setMessages] = useState<ConversationMessageT[]>([]);
     const [input, setInput] = useState<string>("");
     const [isTyping, setIsTyping] = useState<boolean>(false);
+    const [isDeletingRecord, setIsDeletingRecord] = useState<boolean>(false);
     const bottomRef = useRef<HTMLDivElement>(null);
     const [conversations, setConversations] = useState<ConversationSummaryT[]>([]);
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
@@ -97,6 +99,22 @@ function Chat({ title }: ChatProps) {
         }
     };
 
+    const handleDeleteConversation = async (id: string) => {
+        setIsDeletingRecord(true);
+        try {
+            await deleteConversationMessages(id);
+            getConversationHistory();
+            if (id === activeConversationId) {
+                setActiveConversationId(null);
+                setMessages([]);
+            }
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to delete conversation");
+        } finally {
+            setIsDeletingRecord(false);
+        }
+    };
+
     return (
         <div className="flex w-full h-screen flex-row overflow-hidden">
             <ChatSidebar
@@ -105,6 +123,7 @@ function Chat({ title }: ChatProps) {
                 activeConversationId={activeConversationId}
                 onSelectConversation={handleSelectConversation}
                 onNewConversation={handleNewConversation}
+                onDeleteConversation={handleDeleteConversation}
             />
             <div className="flex flex-1 flex-col min-h-screen overflow-hidden overflow-y-auto p-4 pb-0">
                 <section className="flex flex-1 flex-col gap-4 overflow-y-auto">
@@ -120,6 +139,7 @@ function Chat({ title }: ChatProps) {
                 </section>
                 <ChatForm input={input} handleInputChange={handleInputChange} handleSend={handleSend} />
             </div>
+            <Loader isLoading={isDeletingRecord} />
         </div>
     );
 }
