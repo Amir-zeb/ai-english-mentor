@@ -2,9 +2,7 @@ import { ROLES } from "./constant";
 
 export type ChatRole = typeof ROLES[keyof typeof ROLES];
 
-export type ChatResponseBody = {
-    reply: string;
-};
+export type ChatResponseBody = ConversationMessageT;
 
 export type ConversationSummaryT = {
     _id: string;
@@ -24,6 +22,7 @@ export type ConversationMessageT = {
     role: ChatRole;
     content: string;
     createdAt?: string;
+    conversationId?: string;
 };
 
 export type ConversationDetailT = {
@@ -34,6 +33,7 @@ export type ConversationDetailT = {
     messages: ConversationMessageT[];
 };
 
-export type ChatRequestBody = {
-    messages: ConversationMessageT[];
+export type ChatRequestBodyT = {
+    conversationId: string;
+    message: string;
 };
