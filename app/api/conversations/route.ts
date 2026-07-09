@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     await connectDB();
 
     const conversations = await ConversationHistory.create({
-        title: title.slice(0, 100), // guard against a huge first message becoming the title
+        title: title.trim().slice(0, 100), // guard against a huge first message becoming the title
         model: model ?? MODEL,
     });
 
