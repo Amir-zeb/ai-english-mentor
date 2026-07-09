@@ -1,9 +1,13 @@
 'use client';
-import { ROLES } from "@/lib/constant";
-import { sendMessage } from "@/lib/services/chat.service";
-import { ChatSideBarProps, ConversationMessageT, ConversationSummaryT } from "@/lib/types";
 import { useEffect, useRef, useState } from "react";
+import { sendMessage } from "@/lib/services/chat.service";
 import { getConversationMessages, getConversations } from "@/lib/services/conversationService";
+import ChatMessage from "./ChatMessage";
+import TypingIndicator from "./TypingIndicator";
+import { ConversationMessageT, ConversationSummaryT } from "@/lib/types";
+import { ROLES } from "@/lib/constant";
+import ChatSidebar from "./ChatSidebar";
+import ChatForm from "./ChatForm";
 
 export type ChatProps = {
     title?: string;
@@ -20,10 +24,14 @@ function Chat({ title }: ChatProps) {
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
 
     useEffect(() => {
+        getConversationHistory();
+    }, []);
+
+    const getConversationHistory = () => {
         getConversations()
             .then(setConversations)
             .catch((err) => console.error("Failed to load conversations:", err));
-    }, []);
+    }
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -53,8 +61,12 @@ function Chat({ title }: ChatProps) {
         setInput("");
 
         try {
-            const assistantReply = await sendMessage([...messages, userMessage]);
-            setMessages((prev) => [...prev, assistantReply]);
+            const _m = await sendMessage(activeConversationId, userMessage.content);
+            setMessages((prev) => [...prev, _m]);
+            if (!activeConversationId) {
+                setActiveConversationId(_m.conversationId as string);
+                getConversationHistory();
+            }
         } catch (error) {
             console.error('Error sending message:', error);
         } finally {
@@ -96,7 +108,7 @@ function Chat({ title }: ChatProps) {
             <div className="flex flex-1 flex-col min-h-screen overflow-hidden overflow-y-auto p-4">
                 <section className="flex flex-1 flex-col gap-4 overflow-y-auto">
                     {messages.length ? messages.map((message, i) => (
-                        <Message key={i} message={message} />
+                        <ChatMessage key={i} message={message} />
                     )) :
                         <div>
                             <p className="text-center">No messages yet. Start the conversation!</p>
@@ -105,22 +117,7 @@ function Chat({ title }: ChatProps) {
                     {isTyping && <TypingIndicator />}
                     <div ref={bottomRef} className='visibility:hidden' />
                 </section>
-                <form onSubmit={handleSend} className="border-t border-white/10 py-4">
-                    <div className="flex flex-col gap-3 rounded-2xl border border-white/10 p-3 sm:flex-row sm:items-center">
-                        <input
-                            value={input}
-                            onChange={handleInputChange}
-                            placeholder="Type your message..."
-                            className="flex-1 px-4 py-3 text-sm text-white outline-none ring-0"
-                        />
-                        <button
-                            type="submit"
-                            className="rounded-xl bg-linear-to-r from-slate-800/30 to-slate-900 px-4 py-3 text-sm font-semibold text-white opacity-30 transition hover:opacity-100"
-                        >
-                            Send
-                        </button>
-                    </div>
-                </form>
+                <ChatForm input={input} handleInputChange={handleInputChange} handleSend={handleSend} />
             </div>
         </div>
     );
@@ -128,66 +125,3 @@ function Chat({ title }: ChatProps) {
 
 export default Chat;
 
-const ChatSidebar = ({
-    title = 'Mentor',
-    history = [],
-    activeConversationId,
-    onSelectConversation,
-    onNewConversation,
-}: ChatSideBarProps) => {
-    return (
-        <div className="flex w-64 flex-col border-r border-white/10">
-            <div className="p-2 border-b border-white/10">
-                <h4 className="text-center text-lg font-bold">{title}</h4>
-            </div>
-            <div className="flex-1 p-4 overflow-y-auto overflow-x-hidden">
-                <ul className="flex flex-col gap-1">
-                    <li
-                        onClick={() => onNewConversation?.()}
-                        className={`cursor-pointer truncate rounded-lg px-3 py-2 text-sm hover:bg-white/10 ${activeConversationId === null ? "bg-white/10" : ""
-                            }`}
-                    >
-                        + Start a new conversation
-                    </li>
-                    {history.map((conv) => (
-                        <li
-                            key={conv._id}
-                            onClick={() => onSelectConversation?.(conv._id)}
-                            className={`cursor-pointer truncate rounded-lg px-3 py-2 text-sm hover:bg-white/10 ${conv._id === activeConversationId ? "bg-white/10" : ""
-                                }`}
-                        >
-                            {conv.title}
-                        </li>
-                    ))}
-                </ul>
-            </div>
-        </div>
-    )
-}
-
-function TypingIndicator() {
-    return (
-        <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-white" />
-            <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-white [animation-delay:0.15s]" />
-            <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-white [animation-delay:0.3s]" />
-        </div>
-    );
-}
-
-function Message({ message }: { message: ConversationMessageT }) {
-    return (
-        <div
-            className={`flex ${message.role === ROLES.USER ? "justify-end" : "justify-start"}`}
-        >
-            <div
-                className={`max-w-[80%] text-sm sm:max-w-[70%] ${message.role === ROLES.USER
-                    ? "bg-slate-800/90 text-white rounded-2xl px-4 py-3 shadow-md"
-                    : ""
-                    }`}
-            >
-                <p>{message.content}</p>
-            </div>
-        </div>
-    );
-}
