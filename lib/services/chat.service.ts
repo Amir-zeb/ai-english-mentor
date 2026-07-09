@@ -1,17 +1,17 @@
 import { ROLES } from "../constant";
 import { ConversationMessageT } from "../types";
 
-export async function sendMessage(messages: ConversationMessageT[]): Promise<ConversationMessageT> {
+export async function sendMessage(conversationId: string | null, message: string): Promise<ConversationMessageT> {
     const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages }),
+        body: JSON.stringify({ conversationId, message }),
     });
 
+    if (!response.ok) {
+        throw new Error('Failed to send message');
+    }
+
     const data = await response.json();
-    const assistantReply: ConversationMessageT = {
-        role: ROLES.ASSISTANT,
-        content: data.reply,
-    };
-    return assistantReply;
+    return data;
 }
