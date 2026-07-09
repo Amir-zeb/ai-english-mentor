@@ -23,3 +23,27 @@ export async function GET(
 
     return NextResponse.json({ conversation, messages });
 }
+
+export async function DELETE(
+    req: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+
+        await connectDB();
+
+        const conversation = await ConversationHistory.findByIdAndDelete(id);
+        if (!conversation) {
+            return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+        }
+
+        // clean up orphaned messages belonging to this conversation
+        await Messages.deleteMany({ conversationId: id });
+
+        return NextResponse.json({ success: true, message: "Conversation deleted successfully" });
+    } catch (error) {
+        console.error("Delete conversation error:", error);
+        return NextResponse.json({ error: "Failed to delete conversation" }, { status: 500 });
+    }
+}
