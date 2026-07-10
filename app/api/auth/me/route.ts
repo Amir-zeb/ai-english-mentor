@@ -3,8 +3,22 @@ import { connectDB } from "@/lib/db/connect";
 import { User } from "@/lib/models/User";
 import { verifyToken } from "@/lib/auth/jwt";
 
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     tags:
+ *       - Authentication
+ *     summary: Returns the authenticated user
+ *     responses:
+ *       200:
+ *         description: User returned successfully
+ *       401:
+ *         description: Unauthorized
+ */
 export async function GET(req: NextRequest) {
     const token = req.cookies.get("token")?.value;
+    console.log("🚀 ~ GET ~ token:", token)
     if (!token) {
         return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
