@@ -29,3 +29,10 @@ export type ChatRequestBodyT = {
     conversationId: string;
     message: string;
 };
+
+export type AuthUser = {
+    id: string;
+    firstName: string;
+    lastName: string;
+    username: string;
+};
