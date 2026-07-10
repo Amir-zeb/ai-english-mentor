@@ -4,6 +4,80 @@ import { User } from "@/lib/models/User";
 import { verifyPassword } from "@/lib/auth/password";
 import { signToken } from "@/lib/auth/jwt";
 
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     tags:
+ *       - Authentication
+ *     summary: Authenticate a user
+ *     description: |
+ *       Authenticates a user using their username and password.
+ *       On successful authentication, a secure HTTP-only JWT cookie named `token`
+ *       is returned and used for subsequent authenticated requests.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: johndoe
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: MySecurePassword123
+ *     responses:
+ *       200:
+ *         description: Login successful.
+ *         headers:
+ *           Set-Cookie:
+ *             description: HTTP-only JWT authentication cookie.
+ *             schema:
+ *               type: string
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   example: 6847d52d2f5d8c7f3d6a9b12
+ *                 firstName:
+ *                   type: string
+ *                   example: John
+ *                 lastName:
+ *                   type: string
+ *                   example: Doe
+ *                 username:
+ *                   type: string
+ *                   example: johndoe
+ *       400:
+ *         description: Username or password was not provided.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: username and password are required
+ *       401:
+ *         description: Invalid username or password.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Invalid username or password
+ */
 export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const { username, password } = body;
