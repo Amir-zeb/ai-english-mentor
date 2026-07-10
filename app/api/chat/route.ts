@@ -7,6 +7,74 @@ import { MENTOR_SYSTEM_PROMPT } from "@/lib/prompts/mentor";
 import { ROLES } from "@/lib/constant";
 import { ChatRequestBodyT, ChatResponseBody, ConversationMessageT } from "@/lib/types";
 
+/**
+ * @swagger
+ * /api/chat:
+ *   post:
+ *     tags:
+ *       - Chat
+ *     summary: Send a message and get a response
+ *     description: |
+ *       Sends a message and retrieves a response from the AI.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - message
+ *               - conversationId
+ *             properties:
+ *               message:
+ *                 type: string
+ *                 example: Hello, how are you?
+ *               conversationId:
+ *                 type: string
+ *                 example: 6847d52d2f5d8c7f3d6a9b12
+ *     responses:
+ *       200:
+ *         description: Message sent and response received.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 conversationId:
+ *                   type: string
+ *                   example: 6847d52d2f5d8c7f3d6a9b12
+ *                 role:
+ *                   type: string
+ *                   example: user | assistant | system
+ *                 content:
+ *                   type: string
+ *                   example: Hello, how are you?
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *                   example: 2023-01-01T00:00:00.000Z
+ *       400:
+ *         description: Missing required field.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Message is required
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal server error     
+ */
+
 export async function POST(req: NextRequest) {
     const body: ChatRequestBodyT = await req.json().catch(() => ({} as ChatRequestBodyT));
     const { message } = body;
@@ -69,7 +137,6 @@ export async function POST(req: NextRequest) {
             conversationId: conversationId as string,
             createdAt: newMessage.createdAt.toISOString(),
         };
-        return NextResponse.json(responseBody);
         return NextResponse.json(responseBody);
     } catch (error) {
         console.error("Chat API error:", error);
