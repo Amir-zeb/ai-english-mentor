@@ -35,5 +35,6 @@ export const config = {
         "/api/auth/me",
         "/api/auth/logout",
         "/",
+        "/chat",
     ],
 };
