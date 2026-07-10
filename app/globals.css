@@ -19,6 +19,10 @@
   }
 }
 
+.btn-primary{
+  @apply rounded-xl bg-linear-to-r from-slate-800/10 hover:from-slate-800/30 to-slate-900/50 hover:to-slate-900 px-4 py-3 text-sm font-semibold text-white transition ease-in-out disabled:opacity-50
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
