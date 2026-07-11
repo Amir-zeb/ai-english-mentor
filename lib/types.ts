@@ -2,7 +2,10 @@ import { ROLES } from "./constant";
 
 export type ChatRole = typeof ROLES[keyof typeof ROLES];
 
-export type ChatResponseBody = ConversationMessageT;
+export type ChatResponseBody = {
+    userMessage:ConversationMessageT,
+    assistantMessage:ConversationMessageT,
+};
 
 export type ConversationSummaryT = {
     _id: string;
@@ -14,6 +17,7 @@ export type ConversationMessageT = {
     role: ChatRole;
     content: string;
     createdAt?: string;
+    score?: number;
     conversationId?: string;
 };
 
