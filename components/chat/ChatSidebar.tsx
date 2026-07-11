@@ -1,31 +1,44 @@
-import { MdOutlineDeleteOutline } from "react-icons/md";
-import { ConversationSummaryT } from "@/lib/types";
+import { MdOutlineDeleteOutline, MdSwapHoriz } from "react-icons/md";
+import { ConversationSummaryT, MentorSummaryT } from "@/lib/types";
 import { toast } from "sonner";
 
 type IDParamFunctionT = (id: string) => void;
 type VoidFunctionT = () => void;
 
 export type ChatSideBarProps = {
-    title?: string;
-    history?: ConversationSummaryT[];
-    activeConversationId?: string | null;
-    onSelectConversation?: IDParamFunctionT;
-    onNewConversation?: VoidFunctionT;
-    onDeleteConversation?: IDParamFunctionT;
+    activeMentor: MentorSummaryT | null | undefined;
+    history: ConversationSummaryT[];
+    activeConversationId: string | null;
+    onSelectConversation: IDParamFunctionT;
+    openModel: VoidFunctionT;
+    onNewConversation: VoidFunctionT;
+    onDeleteConversation: IDParamFunctionT;
 };
 
 export default function ChatSidebar({
-    title = 'Mentor',
+    activeMentor,
     history = [],
     activeConversationId,
     onSelectConversation,
+    openModel,
     onNewConversation,
     onDeleteConversation
 }: ChatSideBarProps) {
     return (
         <div className="flex w-64 flex-col border-r border-white/10">
             <div className="p-2 border-b border-white/10">
-                <h4 className="text-center text-lg font-bold">{title}</h4>
+                {/* <h4 className="text-center text-lg font-bold">{activeMentor?.title ?? ""}</h4> */}
+                <div className="flex items-center justify-between border-b border-white/10 p-2">
+                    <h4 className="text-lg font-bold">{activeMentor?.title}</h4>
+                    <button
+                        type="button"
+                        onClick={openModel}
+                        className="rounded-lg p-1 text-white/50 hover:text-white"
+                        title="Change mentor"
+                    >
+                        <MdSwapHoriz />
+                    </button>
+                </div>
             </div>
             <div className="flex-1 p-4 overflow-y-auto overflow-x-hidden">
                 <ul className="flex flex-col gap-1">
@@ -67,16 +80,15 @@ function ListItem({ conv, activeConversationId, onSelectConversation, onDeleteCo
             },
             cancel: {
                 label: 'Cancel',
-                onClick: () => {},
+                onClick: () => { },
             },
         });
     }
 
     return (
         <li
-            className={`group relative flex items-center rounded-lg text-sm hover:bg-white/10 ${
-                conv._id === activeConversationId ? "bg-white/10" : ""
-            }`}
+            className={`group relative flex items-center rounded-lg text-sm hover:bg-white/10 ${conv._id === activeConversationId ? "bg-white/10" : ""
+                }`}
         >
             <button
                 type="button"
