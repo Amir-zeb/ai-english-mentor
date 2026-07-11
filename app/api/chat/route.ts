@@ -26,6 +26,7 @@ import { getUserId } from "@/lib/auth/getUserId";
  *             required:
  *               - message
  *               - conversationId
+ *               - mentorName
  *             properties:
  *               message:
  *                 type: string
@@ -33,6 +34,9 @@ import { getUserId } from "@/lib/auth/getUserId";
  *               conversationId:
  *                 type: string
  *                 example: 6847d52d2f5d8c7f3d6a9b12
+ *               mentorName:
+ *                 type: string
+ *                 example: English_Conversation_Mentor
  *     responses:
  *       200:
  *         description: Message sent and response received.
@@ -50,6 +54,9 @@ import { getUserId } from "@/lib/auth/getUserId";
  *                 content:
  *                   type: string
  *                   example: Hello, how are you?
+ *                 mentorName:
+ *                   type: string
+ *                   example: English_Conversation_Mentor
  *                 createdAt:
  *                   type: string
  *                   format: date-time
@@ -78,7 +85,7 @@ import { getUserId } from "@/lib/auth/getUserId";
 
 export async function POST(req: NextRequest) {
     const body: ChatRequestBodyT = await req.json().catch(() => ({} as ChatRequestBodyT));
-    const { message } = body;
+    const { message, mentorName } = body;
     let { conversationId } = body;
     const userId = getUserId(req);
     let history: ConversationMessageT[] = [];
@@ -94,10 +101,14 @@ export async function POST(req: NextRequest) {
         : null;
 
     if (!conversation) {
+        if (!mentorName) {
+            return NextResponse.json({ error: "mentorName is required" }, { status: 400 });
+        }
         const MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b";
         conversation = await ConversationHistory.create({
             title: message.trim().slice(0, 100),
             model: MODEL,
+            mentorName,
             userId
         });
         conversationId = conversation._id.toString();
