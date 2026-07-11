@@ -28,6 +28,7 @@ export type ConversationDetailT = {
 export type ChatRequestBodyT = {
     conversationId: string;
     message: string;
+    mentorName: string;
 };
 
 export type AuthUser = {
@@ -35,4 +36,11 @@ export type AuthUser = {
     firstName: string;
     lastName: string;
     username: string;
+};
+
+export type MentorSummaryT = {
+    id: number;
+    name: string;
+    title: string;
+    description: string;
 };
