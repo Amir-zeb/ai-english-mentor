@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/connect";
 import { ConversationHistory } from "@/lib/models/ConversationHistory";
 import { Messages } from "@/lib/models/Messages";
+import { getUserId } from "@/lib/auth/getUserId";
 
 /**
  * @swagger
@@ -90,10 +91,10 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id } = await params;
-
+    const userId = getUserId(req);
     await connectDB();
 
-    const conversation = await ConversationHistory.findById(id).lean();
+    const conversation = await ConversationHistory.findById(id, userId).lean();
     if (!conversation) {
         return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
     }
@@ -163,6 +164,7 @@ export async function DELETE(
 ) {
     try {
         const { id } = await params;
+        const userId = getUserId(req);
 
         await connectDB();
 
@@ -172,7 +174,7 @@ export async function DELETE(
         }
 
         // clean up orphaned messages belonging to this conversation
-        await Messages.deleteMany({ conversationId: id });
+        await Messages.deleteMany({ conversationId: id, userId });
 
         return NextResponse.json({ success: true, message: "Conversation deleted successfully" });
     } catch (error) {

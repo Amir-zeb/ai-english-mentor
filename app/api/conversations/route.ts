@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/connect";
 import { ConversationHistory } from "@/lib/models/ConversationHistory";
+import { getUserId } from "@/lib/auth/getUserId";
 
 const MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b";
 
@@ -68,6 +69,7 @@ const MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b";
 export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const { title, model } = body;
+    const userId = getUserId(req);
 
     if (!title || typeof title !== "string") {
         return NextResponse.json({ error: "title is required" }, { status: 400 });
@@ -76,6 +78,7 @@ export async function POST(req: NextRequest) {
     await connectDB();
 
     const conversations = await ConversationHistory.create({
+        userId,
         title: title.trim().slice(0, 100), // guard against a huge first message becoming the title
         model: model ?? MODEL,
     });
@@ -130,10 +133,11 @@ export async function POST(req: NextRequest) {
  *                   example: Internal server error
  */
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     await connectDB();
+    const userId = getUserId(req);
 
-    const conversations = await ConversationHistory.find({})
+    const conversations = await ConversationHistory.find({userId})
         .sort({ updatedAt: -1 })
         .select("_id title updatedAt")
         .lean();

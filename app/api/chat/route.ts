@@ -6,6 +6,7 @@ import { getChatCompletion } from "@/lib/aiProvider/ollama";
 import { MENTOR_SYSTEM_PROMPT } from "@/lib/prompts/mentor";
 import { ROLES } from "@/lib/constant";
 import { ChatRequestBodyT, ChatResponseBody, ConversationMessageT } from "@/lib/types";
+import { getUserId } from "@/lib/auth/getUserId";
 
 /**
  * @swagger
@@ -79,6 +80,7 @@ export async function POST(req: NextRequest) {
     const body: ChatRequestBodyT = await req.json().catch(() => ({} as ChatRequestBodyT));
     const { message } = body;
     let { conversationId } = body;
+    const userId = getUserId(req);
     let history: ConversationMessageT[] = [];
 
     if (!message) {
@@ -96,11 +98,12 @@ export async function POST(req: NextRequest) {
         conversation = await ConversationHistory.create({
             title: message.trim().slice(0, 100),
             model: MODEL,
+            userId
         });
         conversationId = conversation._id.toString();
     } else {
         // fetch existing history for this conversation
-        history = await Messages.find({ conversationId })
+        history = await Messages.find({ conversationId, userId })
             .sort({ createdAt: 1 })
             .select("role content")
             .lean();
