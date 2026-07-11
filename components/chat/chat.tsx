@@ -60,19 +60,24 @@ function Chat({ mentors }: ChatProps) {
 
         if (!input.trim()) return;
 
-        const userMessage: ConversationMessageT = {
+        const _userMessage: ConversationMessageT = {
             role: ROLES.USER,
             content: input.trim(),
         };
-        setMessages((prev) => [...prev, userMessage]);
+        setMessages((prev) => [...prev, _userMessage]);
         setIsTyping(true);
         setInput("");
 
         try {
-            const _m = await sendMessage(activeConversationId, userMessage.content, activeMentorName as string);
-            setMessages((prev) => [...prev, _m]);
+            const { userMessage, assistantMessage } = await sendMessage(activeConversationId, _userMessage.content, activeMentorName as string);
+
+            setMessages((prev) => {
+                const withoutOptimistic = prev.slice(0, -1); // remove the optimistic user message
+                return [...withoutOptimistic, userMessage, assistantMessage];
+            });
+
             if (!activeConversationId) {
-                setActiveConversationId(_m.conversationId as string);
+                setActiveConversationId(assistantMessage.conversationId as string);
                 getConversationHistory();
             }
         } catch (error) {
