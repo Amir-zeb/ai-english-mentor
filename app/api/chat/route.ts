@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
     }
 
     // save the user's new message
-    await Messages.create({
+    const userMessageDoc = await Messages.create({
         conversationId,
         role: ROLES.USER,
         content: message,
@@ -135,21 +135,34 @@ export async function POST(req: NextRequest) {
     ];
 
     try {
-        const reply = await getChatCompletion(messagesForAI);
+        const { reply, score } = await getChatCompletion(messagesForAI);
 
-        const newMessage = await Messages.create({
+        // now that we have the score, attach it to the user's message we already saved
+        userMessageDoc.score = score;
+        await userMessageDoc.save();
+
+        const assistantMessageDoc = await Messages.create({
             conversationId,
             role: ROLES.ASSISTANT,
             content: reply,
         });
-
         conversation.updatedAt = new Date();
         await conversation.save();
+
         const responseBody: ChatResponseBody = {
-            role: newMessage.role,
-            content: newMessage.content,
-            conversationId: conversationId as string,
-            createdAt: newMessage.createdAt.toISOString(),
+            userMessage: {
+                role: userMessageDoc.role,
+                content: userMessageDoc.content,
+                score: userMessageDoc.score,
+                conversationId: conversationId as string,
+                createdAt: userMessageDoc.createdAt.toISOString(),
+            },
+            assistantMessage: {
+                role: assistantMessageDoc.role,
+                content: assistantMessageDoc.content,
+                conversationId: conversationId as string,
+                createdAt: assistantMessageDoc.createdAt.toISOString(),
+            },
         };
         return NextResponse.json(responseBody);
     } catch (error) {
