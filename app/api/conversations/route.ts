@@ -22,10 +22,14 @@ const MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b";
  *             type: object
  *             required:
  *               - title
+ *               - mentorName
  *             properties:
  *               title:
  *                 type: string
  *                 example: Hello, how are you?
+ *               mentorName:
+ *                 type: string
+ *                 example: English_mentor
  *     responses:
  *       200:
  *         description: Message sent and response received.
@@ -68,11 +72,11 @@ const MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b";
 
 export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
-    const { title, model } = body;
+    const { title, model, mentorName } = body;
     const userId = getUserId(req);
 
-    if (!title || typeof title !== "string") {
-        return NextResponse.json({ error: "title is required" }, { status: 400 });
+    if (!title || typeof title !== "string" && !mentorName || typeof mentorName !== "string") {
+        return NextResponse.json({ error: "title and mentorName is required" }, { status: 400 });
     }
 
     await connectDB();
@@ -81,6 +85,7 @@ export async function POST(req: NextRequest) {
         userId,
         title: title.trim().slice(0, 100), // guard against a huge first message becoming the title
         model: model ?? MODEL,
+        mentorName,
     });
 
     return NextResponse.json({
@@ -98,6 +103,13 @@ export async function POST(req: NextRequest) {
  *       - ConversationHistory
  *     summary: Get all conversations
  *     description: Returns a list of all conversations sorted by the most recently updated.
+ *     parameters:
+ *       - in: query
+ *         name: mentorName
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Used to filter results based on mentor.
  *     responses:
  *       200:
  *         description: Conversations retrieved successfully.
@@ -132,12 +144,13 @@ export async function POST(req: NextRequest) {
  *                   type: string
  *                   example: Internal server error
  */
-
 export async function GET(req: NextRequest) {
     await connectDB();
+    const { searchParams } = req.nextUrl;
+    const mentorName = searchParams.get('mentorName');
     const userId = getUserId(req);
 
-    const conversations = await ConversationHistory.find({userId})
+    const conversations = await ConversationHistory.find({ userId, mentorName })
         .sort({ updatedAt: -1 })
         .select("_id title updatedAt")
         .lean();
