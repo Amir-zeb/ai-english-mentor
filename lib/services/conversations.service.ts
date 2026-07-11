@@ -1,7 +1,7 @@
 import { ConversationDetailT, ConversationSummaryT } from "../types";
 
-export async function getConversations(): Promise<ConversationSummaryT[]> {
-    const response = await fetch("/api/conversations");
+export async function getConversations(mentorName: string): Promise<ConversationSummaryT[]> {
+    const response = await fetch(`/api/conversations?mentorName=${mentorName}`);
     if (!response.ok) {
         throw new Error("Failed to fetch conversation history");
     }
@@ -20,7 +20,6 @@ export async function getConversationMessages(id: string): Promise<ConversationD
 export async function deleteConversationMessages(id: string): Promise<any> {
     const response = await fetch(`/api/conversations/${id}`, {
         method: 'DELETE',
-        body: JSON.stringify({ conversationId: id }),
         headers: {
             'Content-Type': 'application/json'
         }
@@ -31,12 +30,13 @@ export async function deleteConversationMessages(id: string): Promise<any> {
     return response.json();
 }
 
-export async function createConversationHistory(title: string): Promise<ConversationDetailT> {
+export async function createConversationHistory(title: string, mentorName: string): Promise<ConversationDetailT> {
     const response = await fetch(`/api/conversations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            title: title.trim().slice(0, 100)
+            title: title.trim().slice(0, 100),
+            mentorName
         }),
     });
     if (!response.ok) {
