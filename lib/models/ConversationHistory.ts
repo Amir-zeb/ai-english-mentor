@@ -4,6 +4,7 @@ export interface IConversationHistory {
     _id: mongoose.Types.ObjectId;
     title: string;
     model: string;
+    userId: mongoose.Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -12,6 +13,7 @@ const ConversationHistorySchema = new Schema<IConversationHistory>(
     {
         title: { type: String, default: "New conversation", trim: true, required: true },
         model: { type: String, required: true },
+        userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     },
     { timestamps: true }
 );
