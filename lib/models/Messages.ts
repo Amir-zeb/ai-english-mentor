@@ -4,6 +4,7 @@ export interface IMessage {
     _id: mongoose.Types.ObjectId;
     conversationId: mongoose.Types.ObjectId;
     role: "user" | "assistant" | "system";
+    score: number,
     content: string;
     createdAt: Date;
 }
@@ -13,6 +14,7 @@ const MessageSchema = new Schema<IMessage>(
         conversationId: { type: Schema.Types.ObjectId, ref: "Conversation", required: true },
         role: { type: String, enum: ["user", "assistant", "system"], required: true },
         content: { type: String, required: true, trim: true },
+        score: { type: Number, required: false }
     },
     { timestamps: { createdAt: true, updatedAt: false } }
 );
