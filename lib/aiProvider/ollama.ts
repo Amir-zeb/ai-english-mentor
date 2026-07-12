@@ -8,6 +8,15 @@ export type AICompletionResult = {
     score: number;
 };
 
+const RESPONSE_SCHEMA = {
+    type: "object",
+    properties: {
+        reply: { type: "string" },
+        score: { type: "integer" },
+    },
+    required: ["reply", "score"],
+};
+
 export async function getChatCompletion(messages: Omit<ConversationMessageT, "score">[]): Promise<AICompletionResult> {
     const response = await fetch(`${OLLAMA_URL}/api/chat`, {
         method: "POST",
@@ -16,7 +25,10 @@ export async function getChatCompletion(messages: Omit<ConversationMessageT, "sc
             model: MODEL,
             messages,
             stream: false,
-            format: "json"
+            format: RESPONSE_SCHEMA, // schema-constrained, not just "json"
+            options: {
+                temperature: 0.4, // a bit of warmth for casual chat, but still stable for JSON adherence
+            },
         }),
     });
 
@@ -32,24 +44,23 @@ export async function getChatCompletion(messages: Omit<ConversationMessageT, "sc
 }
 
 function parseAIResponse(raw: string): AICompletionResult {
-    // strip markdown code fences if the model added them despite instructions
-    const cleaned = raw.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "");
-
     try {
-        const parsed = JSON.parse(cleaned);
-        const reply = typeof parsed.reply === "string" ? parsed.reply : "";
+        const parsed = JSON.parse(raw.trim());
+        const reply = typeof parsed.reply === "string" ? parsed.reply.trim() : "";
         const score = typeof parsed.score === "number"
             ? Math.min(100, Math.max(0, Math.round(parsed.score)))
-            : 0;
+            : null;
 
         if (!reply) {
             throw new Error("Missing reply field");
         }
 
-        return { reply, score };
+        return { reply, score: score ?? 70 };
     } catch (err) {
         console.error("Failed to parse AI JSON response:", raw, err);
-        // fallback: treat the whole raw output as the reply, no score
-        return { reply: raw.trim() || "Sorry, I had trouble responding. Could you try again?", score: 0 };
+        return {
+            reply: "Sorry, could you say that again?",
+            score: 70,
+        };
     }
 }
