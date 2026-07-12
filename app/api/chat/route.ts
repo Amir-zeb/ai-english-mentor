@@ -114,9 +114,10 @@ export async function POST(req: NextRequest) {
         conversationId = conversation._id.toString();
     } else {
         // fetch existing history for this conversation
-        history = await Messages.find({ conversationId, userId })
+        history = await Messages.find({ conversationId })
             .sort({ createdAt: 1 })
             .select("role content")
+            .limit(10)
             .lean();
     }
 
