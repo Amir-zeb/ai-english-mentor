@@ -3,8 +3,8 @@ import { ROLES } from "./constant";
 export type ChatRole = typeof ROLES[keyof typeof ROLES];
 
 export type ChatResponseBody = {
-    userMessage:ConversationMessageT,
-    assistantMessage:ConversationMessageT,
+    userMessage: ConversationMessageT,
+    assistantMessage: ConversationMessageT,
 };
 
 export type ConversationSummaryT = {
@@ -14,6 +14,7 @@ export type ConversationSummaryT = {
 };
 
 export type ConversationMessageT = {
+    _id?: string;
     role: ChatRole;
     content: string;
     createdAt?: string;
@@ -48,3 +49,6 @@ export type MentorSummaryT = {
     title: string;
     description: string;
 };
+
+export type IDParamFunctionT = (id: string) => void;
+export type VoidFunctionT = () => void;
