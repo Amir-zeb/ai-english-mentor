@@ -1,5 +1,14 @@
 import { ROLES } from "@/lib/constant";
 import { ConversationMessageT } from "@/lib/types";
+import { MdStop, MdVolumeUp } from "react-icons/md";
+
+type ChatMessageProps = {
+    message: ConversationMessageT,
+    isSpeaking: boolean | null
+    currentSpeakingId: string | null,
+    onSpeak: (text: string, id: string) => void,
+    stop: () => void,
+}
 
 function getScoreColor(score: number): string {
     if (score >= 75) return "bg-green-500";
@@ -15,19 +24,19 @@ function formatTime(dateString?: string): string {
     });
 }
 
-export default function ChatMessage({ message }: { message: ConversationMessageT }) {
+export default function ChatMessage({ message, isSpeaking, currentSpeakingId, stop, onSpeak }: ChatMessageProps) {
     const isUser = message.role === ROLES.USER;
     const hasScore = isUser && typeof message.score === "number";
+    const isThisMessageSpeaking = isSpeaking && currentSpeakingId === message._id;
 
     return (
         <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
             <div className={`flex max-w-[80%] flex-col sm:max-w-[70%] ${isUser ? "items-end" : "items-start"}`}>
                 <div
-                    className={`relative text-sm ${
-                        isUser
-                            ? "rounded-2xl bg-slate-800/90 px-4 py-3 pr-6 text-white shadow-md"
-                            : ""
-                    }`}
+                    className={`relative text-sm ${isUser
+                        ? "rounded-2xl bg-slate-800/90 px-4 py-3 pr-6 text-white shadow-md"
+                        : ""
+                        }`}
                 >
                     <p>{message.content}</p>
                     {hasScore && (
@@ -37,11 +46,25 @@ export default function ChatMessage({ message }: { message: ConversationMessageT
                         />
                     )}
                 </div>
-                {message.createdAt && (
-                    <span className="mt-1 px-1 text-[11px] text-white/40">
-                        {formatTime(message.createdAt)}
-                    </span>
-                )}
+                <div className="mt-1 flex items-center gap-2 px-1">
+                    {message.createdAt && (
+                        <span className="text-[11px] text-white/40">
+                            {formatTime(message.createdAt)}
+                        </span>
+                    )}
+                    {!isUser && onSpeak && (
+                        <button
+                            type="button"
+                            onClick={() =>
+                                isThisMessageSpeaking ? stop?.() : onSpeak(message.content, message._id as string)
+                            }
+                            className={`hover:text-white ${isThisMessageSpeaking ? "text-blue-400" : "text-white/40"}`}
+                            title={isThisMessageSpeaking ? "Stop" : "Play message"}
+                        >
+                            {isThisMessageSpeaking ? <MdStop size={14} /> : <MdVolumeUp size={14} />}
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );
