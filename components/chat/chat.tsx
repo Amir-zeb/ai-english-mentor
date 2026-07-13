@@ -11,6 +11,8 @@ import ChatForm from "./chatForm";
 import { toast } from "sonner";
 import Loader from "../loader/loader";
 import { MentorSelectModal } from "./mentorSelectModal";
+import { useAutoSpeakPreference } from "@/lib/hooks/useAutoSpeakPreference";
+import { useSpeechSynthesis } from "@/lib/hooks/useSpeechSynthesis";
 
 export type ChatProps = {
     mentors?: MentorSummaryT[];
@@ -29,6 +31,8 @@ function Chat({ mentors }: ChatProps) {
     const [activeMentorName, setActiveMentorName] = useState<string | null>(null);
     const activeMentor: MentorSummaryT | null | undefined = activeMentorName && mentors ? mentors.find((m) => m.name === activeMentorName) : null;
     const [isMentorModalOpen, setIsMentorModalOpen] = useState(true);
+    const { autoSpeak, setAutoSpeak } = useAutoSpeakPreference();
+    const { speak, stop, isSpeaking, currentSpeakingId } = useSpeechSynthesis();
 
     useEffect(() => {
         if (activeMentorName) {
@@ -59,27 +63,33 @@ function Chat({ mentors }: ChatProps) {
     const handleSend = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
+        if (isSpeaking) {
+            stop()
+        }
+
         if (!input.trim()) return;
 
         const _userMessage: ConversationMessageT = {
             role: ROLES.USER,
             content: input.trim(),
         };
+
         setMessages((prev) => [...prev, _userMessage]);
         setIsTyping(true);
         setInput("");
 
         try {
             const { userMessage, assistantMessage } = await sendMessage(activeConversationId, _userMessage.content, activeMentorName as string);
-
             setMessages((prev) => {
                 const withoutOptimistic = prev.slice(0, -1); // remove the optimistic user message
                 return [...withoutOptimistic, userMessage, assistantMessage];
             });
-
             if (!activeConversationId) {
                 setActiveConversationId(assistantMessage.conversationId as string);
                 getConversationHistory();
+            }
+            if (autoSpeak) {
+                speak(assistantMessage.content, assistantMessage._id);
             }
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Failed to send message. Please try again.");
@@ -97,8 +107,10 @@ function Chat({ mentors }: ChatProps) {
         try {
             const data = await getConversationMessages(id);
             const loadedMessages: ConversationMessageT[] = data.messages.map((m, index) => ({
+                _id: m._id,
                 role: m.role,
                 content: m.content,
+                score: m.score,
                 createdAt: m.createdAt,
             }));
             setMessages(loadedMessages);
@@ -149,11 +161,20 @@ function Chat({ mentors }: ChatProps) {
                     openModel={() => setIsMentorModalOpen(true)}
                     onNewConversation={handleNewConversation}
                     onDeleteConversation={handleDeleteConversation}
+                    autoSpeak={autoSpeak}
+                    setAutoSpeak={setAutoSpeak}
                 />
-                <div className="flex flex-1 flex-col min-h-screen overflow-hidden overflow-y-auto p-4 pb-0">
-                    <section className="flex flex-1 flex-col gap-4 overflow-y-auto">
+                <div className="flex flex-1 flex-col min-h-screen overflow-hidden p-4 pb-0">
+                    <section className="flex flex-1 flex-col gap-4 overflow-y-auto scrollbar-none">
                         {messages.length ? messages.map((message, i) => (
-                            <ChatMessage key={i} message={message} />
+                            <ChatMessage
+                                key={i}
+                                message={message}
+                                onSpeak={speak}
+                                currentSpeakingId={currentSpeakingId}
+                                stop={stop}
+                                isSpeaking={isSpeaking}
+                            />
                         )) :
                             <div>
                                 <p className="text-center">No messages yet. Start the conversation!</p>
