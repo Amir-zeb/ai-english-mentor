@@ -152,6 +152,7 @@ export async function POST(req: NextRequest) {
 
         const responseBody: ChatResponseBody = {
             userMessage: {
+                _id: userMessageDoc._id,
                 role: userMessageDoc.role,
                 content: userMessageDoc.content,
                 score: userMessageDoc.score,
@@ -159,6 +160,7 @@ export async function POST(req: NextRequest) {
                 createdAt: userMessageDoc.createdAt.toISOString(),
             },
             assistantMessage: {
+                _id: assistantMessageDoc._id,
                 role: assistantMessageDoc.role,
                 content: assistantMessageDoc.content,
                 conversationId: conversationId as string,
