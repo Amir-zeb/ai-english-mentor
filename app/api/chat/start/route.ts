@@ -8,6 +8,85 @@ import { ROLES } from "@/lib/constant";
 import { ConversationMessageT } from "@/lib/types";
 import { getUserId } from "@/lib/auth/getUserId";
 
+/**
+ * @swagger
+ * /api/chat/start:
+ *   post:
+ *     tags:
+ *       - Chat
+ *     summary: Start a new conversation
+ *     description: |
+ *       Starts a new conversation with the selected AI mentor.
+ *
+ *       The AI generates an initial greeting and a friendly opening question
+ *       based on a random everyday casual topic. A new conversation and the
+ *       generated assistant message are then saved to the database.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - mentorName
+ *             properties:
+ *               mentorName:
+ *                 type: string
+ *                 description: Name of the AI mentor used for the conversation.
+ *                 example: English_Conversation_Mentor
+ *     responses:
+ *       200:
+ *         description: Conversation started successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 conversationId:
+ *                   type: string
+ *                   description: ID of the newly created conversation.
+ *                   example: 6847d52d2f5d8c7f3d6a9b12
+ *                 assistantMessage:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                       description: ID of the generated assistant message.
+ *                       example: 6847d52d2f5d8c7f3d6a9b13
+ *                     role:
+ *                       type: string
+ *                       example: assistant
+ *                     content:
+ *                       type: string
+ *                       example: "Hi! I'm your English conversation mentor. What do you usually like to do in your free time?"
+ *                     conversationId:
+ *                       type: string
+ *                       example: 6847d52d2f5d8c7f3d6a9b12
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: 2026-07-14T10:30:00.000Z
+ *       400:
+ *         description: Missing mentorName.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: mentorName is required
+ *       500:
+ *         description: Failed to start the conversation.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Failed to start conversation
+ */
 export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const { mentorName } = body;
