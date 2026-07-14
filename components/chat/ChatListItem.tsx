@@ -30,7 +30,7 @@ function ChatListItem({ conv, activeConversationId, onSelectConversation, onDele
             <button
                 type="button"
                 onClick={() => onSelectConversation?.(conv._id)}
-                className="flex-1 truncate px-3 py-2 text-left"
+                className="flex-1 truncate px-3 py-2 text-sm text-left"
             >
                 {conv.title}
             </button>

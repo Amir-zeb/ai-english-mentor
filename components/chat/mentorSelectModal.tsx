@@ -34,7 +34,7 @@ export function MentorSelectModal({
                             className={`cursor-pointer rounded-lg p-3 hover:bg-white/10 ${mentor.name === activeMentorName ? "bg-white/10" : ""
                                 }`}
                         >
-                            <p className="font-medium">{mentor.name}</p>
+                            <p className="font-medium">{mentor.title}</p>
                             <p className="text-xs text-white/50">{mentor.description}</p>
                         </li>
                     ))}

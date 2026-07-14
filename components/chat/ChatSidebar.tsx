@@ -1,7 +1,7 @@
 import { ConversationSummaryT, IDParamFunctionT, MentorSummaryT, VoidFunctionT } from "@/lib/types";
-import ChatListItem from "./ChatListItem";
-import ChatSideBarHeader from "./ChatSideBarHeader";
-import ChatSideBarFooter from "./ChatSideBarFooter";
+import ChatListItem from "./chatListItem";
+import ChatSideBarHeader from "./chatSideBarHeader";
+import ChatSideBarFooter from "./chatSideBarFooter";
 
 type ChatSideBarProps = {
     activeMentor: MentorSummaryT | null | undefined;
