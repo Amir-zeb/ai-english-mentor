@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getChatCompletion } from "@/lib/aiProvider/ollama";
-import { MENTOR_SYSTEM_PROMPT } from "@/lib/prompts/mentor";
 import { ROLES } from "@/lib/constant";
 import { ChatRequestBodyT, ConversationMessageT } from "@/lib/types";
+import { getMentorByName } from "@/lib/mentors/config";
 
 /**
  * @swagger
@@ -21,10 +21,14 @@ import { ChatRequestBodyT, ConversationMessageT } from "@/lib/types";
  *             type: object
  *             required:
  *               - message
+ *               - mentorName
  *             properties:
  *               message:
  *                 type: string
  *                 example: Hello, how are you?
+ *               mentorName:
+ *                 type: string
+ *                 example: English_Conversation_Mentor
  *     responses:
  *       200:
  *         description: Message sent and response received.
@@ -34,6 +38,9 @@ import { ChatRequestBodyT, ConversationMessageT } from "@/lib/types";
  *               type: object
  *               properties:
  *                 reply:
+ *                   type: string
+ *                   example: hello, how are you doing today?
+ *                 feedback:
  *                   type: string
  *                   example: hello, how are you doing today?
  *                 score:
@@ -52,15 +59,20 @@ import { ChatRequestBodyT, ConversationMessageT } from "@/lib/types";
  */
 export async function POST(req: NextRequest) {
     const body: ChatRequestBodyT = await req.json().catch(() => ({} as ChatRequestBodyT));
-    const { message } = body;
+    const { message, mentorName } = body;
 
-    if (!message) {
-        return NextResponse.json({ error: "Message is required" }, { status: 400 });
+    if (!message || !mentorName) {
+        return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    }
+
+    const mentor = getMentorByName(mentorName);
+    if (!mentor) {
+        return NextResponse.json({ error: "Invalid mentor" }, { status: 400 });
     }
 
     // build full message list for the AI call
     const messagesForAI: ConversationMessageT[] = [
-        { role: ROLES.SYSTEM, content: MENTOR_SYSTEM_PROMPT },
+        { role: ROLES.SYSTEM, content: mentor.systemPrompt },
         { role: ROLES.USER, content: message },
     ];
 
