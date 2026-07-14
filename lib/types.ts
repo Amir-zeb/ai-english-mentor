@@ -18,6 +18,7 @@ export type ConversationMessageT = {
     role: ChatRole;
     content: string;
     createdAt?: string;
+    suggestion?: string;
     score?: number;
     conversationId?: string;
 };
