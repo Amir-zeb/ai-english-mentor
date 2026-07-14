@@ -5,6 +5,7 @@ const MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b";
 
 export type AICompletionResult = {
     reply: string;
+    feedback?: string;
     score: number;
 };
 
@@ -13,8 +14,9 @@ const RESPONSE_SCHEMA = {
     properties: {
         reply: { type: "string" },
         score: { type: "integer" },
+        feedback: { type: "string" },
     },
-    required: ["reply", "score"],
+    required: ["reply", "score"], // feedback stays optional — casual mentor won't use it
 };
 
 export async function getChatCompletion(messages: Omit<ConversationMessageT, "score">[]): Promise<AICompletionResult> {
@@ -50,17 +52,17 @@ function parseAIResponse(raw: string): AICompletionResult {
         const score = typeof parsed.score === "number"
             ? Math.min(100, Math.max(0, Math.round(parsed.score)))
             : null;
+        const feedback = typeof parsed.feedback === "string" && parsed.feedback.trim()
+            ? parsed.feedback.trim()
+            : undefined;
 
         if (!reply) {
             throw new Error("Missing reply field");
         }
 
-        return { reply, score: score ?? 70 };
+        return { reply, score: score ?? 70, feedback };
     } catch (err) {
         console.error("Failed to parse AI JSON response:", raw, err);
-        return {
-            reply: "Sorry, could you say that again?",
-            score: 70,
-        };
+        return { reply: "Sorry, could you say that again?", score: 70 };
     }
 }
