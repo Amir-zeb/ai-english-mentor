@@ -3,10 +3,11 @@ import { connectDB } from "@/lib/db/connect";
 import { Messages } from "@/lib/models/Messages";
 import { ConversationHistory } from "@/lib/models/ConversationHistory";
 import { getChatCompletion } from "@/lib/aiProvider/ollama";
-import { MENTOR_SYSTEM_PROMPT } from "@/lib/prompts/mentor";
 import { ROLES } from "@/lib/constant";
 import { ChatRequestBodyT, ChatResponseBody, ConversationMessageT } from "@/lib/types";
 import { getUserId } from "@/lib/auth/getUserId";
+import { getMentorByName } from '@/lib/mentors/config';
+import { User } from "@/lib/models/User";
 
 /**
  * @swagger
@@ -90,6 +91,11 @@ export async function POST(req: NextRequest) {
     const userId = getUserId(req);
     let history: ConversationMessageT[] = [];
 
+    const mentor = getMentorByName(mentorName);
+    if (!mentor) {
+        return NextResponse.json({ error: "Invalid mentor" }, { status: 400 });
+    }
+
     if (!message) {
         return NextResponse.json({ error: "Message is required" }, { status: 400 });
     }
@@ -128,18 +134,27 @@ export async function POST(req: NextRequest) {
         content: message,
     });
 
+    const user = await User.findById(userId).select('username').lean()
+    if (!user) {
+        return NextResponse.json({ error: "user not found" }, { status: 404 });
+    }
+
     // build full message list for the AI call
     const messagesForAI: ConversationMessageT[] = [
-        { role: ROLES.SYSTEM, content: MENTOR_SYSTEM_PROMPT },
+        {
+            role: ROLES.SYSTEM,
+            content: `${mentor.systemPrompt}\n\nThe person you're talking to is named ${user.username}. Address them by name naturally sometimes (not every message) — like a friend would.`
+        },
         ...history.map((m) => ({ role: m.role, content: m.content } as ConversationMessageT)),
         { role: ROLES.USER, content: message },
     ];
 
     try {
-        const { reply, score } = await getChatCompletion(messagesForAI);
+        const { reply, score, feedback } = await getChatCompletion(messagesForAI);
 
         // now that we have the score, attach it to the user's message we already saved
         userMessageDoc.score = score;
+        if (feedback) userMessageDoc.feedback = feedback;
         await userMessageDoc.save();
 
         const assistantMessageDoc = await Messages.create({
@@ -156,6 +171,7 @@ export async function POST(req: NextRequest) {
                 role: userMessageDoc.role,
                 content: userMessageDoc.content,
                 score: userMessageDoc.score,
+                feedback: userMessageDoc.feedback,
                 conversationId: conversationId as string,
                 createdAt: userMessageDoc.createdAt.toISOString(),
             },
