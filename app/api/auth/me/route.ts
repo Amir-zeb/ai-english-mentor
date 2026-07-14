@@ -18,7 +18,6 @@ import { verifyToken } from "@/lib/auth/jwt";
  */
 export async function GET(req: NextRequest) {
     const token = req.cookies.get("token")?.value;
-    console.log("🚀 ~ GET ~ token:", token)
     if (!token) {
         return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
