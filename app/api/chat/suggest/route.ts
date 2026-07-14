@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/connect";
 import { Messages } from "@/lib/models/Messages";
 import { getChatCompletion } from "@/lib/aiProvider/ollama";
-import { MENTOR_SYSTEM_PROMPT } from "@/lib/prompts/mentor";
 import { ROLES } from "@/lib/constant";
 import { ConversationMessageT } from "@/lib/types";
 import { getUserId } from "@/lib/auth/getUserId";
+import { User } from "@/lib/models/User";
+import { ConversationHistory } from "@/lib/models/ConversationHistory";
+import { getMentorByName } from "@/lib/mentors/config";
 
 /**
  * @swagger
@@ -107,42 +109,61 @@ export async function POST(req: NextRequest) {
     }
 
     await connectDB();
-
-    const message = await Messages.findById(messageId);
-    if (!message || message.role !== ROLES.ASSISTANT) {
-        return NextResponse.json({ error: "Message not found" }, { status: 404 });
-    }
-
-    // return cached suggestion if already generated
-    if (message.suggestion) {
-        return NextResponse.json({
-            assistantMessage: {
-                _id: message._id.toString(),
-                role: message.role,
-                content: message.content,
-                suggestion: message.suggestion,
-                conversationId: message.conversationId.toString(),
-                createdAt: message.createdAt.toISOString(),
-            },
-        });
-    }
-
-    const recentHistory = await Messages.find({ conversationId: message.conversationId })
-        .sort({ createdAt: 1 })
-        .select("role content")
-        .limit(10)
-        .lean();
-
-    const messagesForAI: ConversationMessageT[] = [
-        { role: ROLES.SYSTEM, content: MENTOR_SYSTEM_PROMPT },
-        ...recentHistory.map((m) => ({ role: m.role, content: m.content } as ConversationMessageT)),
-        {
-            role: ROLES.USER,
-            content: "[The person you're chatting with is stuck and doesn't know how to reply. Suggest ONE short, natural, casual example reply they could send, written from their point of view. Keep it simple, 1 sentence.]",
-        },
-    ];
-
     try {
+
+        const message = await Messages.findById(messageId);
+        if (!message || message.role !== ROLES.ASSISTANT) {
+            return NextResponse.json({ error: "Message not found" }, { status: 404 });
+        }
+
+        // return cached suggestion if already generated
+        if (message.suggestion) {
+            return NextResponse.json({
+                assistantMessage: {
+                    _id: message._id.toString(),
+                    role: message.role,
+                    content: message.content,
+                    suggestion: message.suggestion,
+                    conversationId: message.conversationId.toString(),
+                    createdAt: message.createdAt.toISOString(),
+                },
+            });
+        }
+
+        const recentHistory = await Messages.find({ conversationId: message.conversationId })
+            .sort({ createdAt: 1 })
+            .select("role content")
+            .limit(10)
+            .lean();
+
+        const conversation = await ConversationHistory.findOne({ _id: message.conversationId, userId });
+        if (!conversation) {
+            return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+        }
+
+        const mentor = getMentorByName(conversation.mentorName);
+        if (!mentor) {
+            return NextResponse.json({ error: "Invalid mentor" }, { status: 400 });
+        }
+
+        const user = await User.findById(userId).select('username').lean()
+        if (!user) {
+            return NextResponse.json({ error: "user not found" }, { status: 404 });
+        }
+
+        const messagesForAI: ConversationMessageT[] = [
+            {
+                role: ROLES.SYSTEM,
+                content: `${mentor.systemPrompt}\n\nThe person you're talking to is named ${user.firstName}. Address them by name naturally sometimes (not every message) — like a friend would.`
+            },
+            ...recentHistory.map((m) => ({ role: m.role, content: m.content } as ConversationMessageT)),
+            {
+                role: ROLES.USER,
+                content: "[The person you're chatting with is stuck and doesn't know how to reply. Suggest ONE short, natural, casual example reply they could send, written from their point of view. Keep it simple, 1 sentence.]",
+            },
+        ];
+
+
         const { reply } = await getChatCompletion(messagesForAI);
 
         message.suggestion = reply;

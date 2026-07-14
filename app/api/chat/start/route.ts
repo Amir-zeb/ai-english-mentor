@@ -3,10 +3,11 @@ import { connectDB } from "@/lib/db/connect";
 import { Messages } from "@/lib/models/Messages";
 import { ConversationHistory } from "@/lib/models/ConversationHistory";
 import { getChatCompletion } from "@/lib/aiProvider/ollama";
-import { MENTOR_SYSTEM_PROMPT } from "@/lib/prompts/mentor";
 import { ROLES } from "@/lib/constant";
 import { ConversationMessageT } from "@/lib/types";
 import { getUserId } from "@/lib/auth/getUserId";
+import { getMentorByName } from "@/lib/mentors/config";
+import { User } from "@/lib/models/User";
 
 /**
  * @swagger
@@ -96,16 +97,29 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "mentorName is required" }, { status: 400 });
     }
 
+    const mentor = getMentorByName(mentorName);
+    if (!mentor) {
+        return NextResponse.json({ error: "Invalid mentor" }, { status: 400 });
+    }
+
     await connectDB();
+
+    const user = await User.findById(userId).select('username').lean()
+    if (!user) {
+        return NextResponse.json({ error: "user not found" }, { status: 404 });
+    }
 
     try {
         const MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b";
 
         const messagesForAI: ConversationMessageT[] = [
-            { role: ROLES.SYSTEM, content: MENTOR_SYSTEM_PROMPT },
+            {
+                role: ROLES.SYSTEM,
+                content: `${mentor.systemPrompt}\n\nThe person you're talking to is named ${user.firstName}. Address them by name naturally sometimes (not every message) — like a friend would.`
+            },
             {
                 role: ROLES.USER,
-                content: "[Start a new conversation. Introduce yourself briefly by name, pick a random everyday casual topic, and greet me with a friendly opening question.]",
+                content: mentor.openerPrompt,
             },
         ];
 
