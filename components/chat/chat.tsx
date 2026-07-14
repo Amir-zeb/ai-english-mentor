@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from "react";
-import { sendMessage, startConversation } from "@/lib/services/chat.service";
+import { getSuggestion, sendMessage, startConversation } from "@/lib/services/chat.service";
 import { deleteConversationMessages, getConversationMessages, getConversations } from "@/lib/services/conversations.service";
 import ChatMessage from "./chatMessage";
 import TypingIndicator from "./typingIndicator";
@@ -31,6 +31,7 @@ function Chat({ mentors }: ChatProps) {
     const [activeMentorName, setActiveMentorName] = useState<string | null>(null);
     const activeMentor: MentorSummaryT | null | undefined = activeMentorName && mentors ? mentors.find((m) => m.name === activeMentorName) : null;
     const [isMentorModalOpen, setIsMentorModalOpen] = useState(true);
+    const [loadingSuggestion, setLoadingSuggestion] = useState(false);
     const { autoSpeak, setAutoSpeak } = useAutoSpeakPreference();
     const { speak, stop, isSpeaking, currentSpeakingId } = useSpeechSynthesis();
 
@@ -116,6 +117,27 @@ function Chat({ mentors }: ChatProps) {
         }
     };
 
+    const handleHelp = async (id: string) => {
+        if (!id) return;
+        setLoadingSuggestion(true);
+
+        const promise = getSuggestion(id).then(({ assistantMessage }) => {
+            setMessages((prev) => prev.map((m) => (m._id === id ? assistantMessage : m)));
+        });
+
+        toast.promise(promise, {
+            loading: "Thinking of a reply for you...",
+            success: "Here's a suggestion!",
+            error: "Couldn't get a suggestion right now",
+        });
+
+        try {
+            await promise;
+        } finally {
+            setLoadingSuggestion(false);
+        }
+    };
+
     const handleSelectConversation = async (id: string) => {
         if (id === activeConversationId) return; // no-op if already active
 
@@ -128,6 +150,7 @@ function Chat({ mentors }: ChatProps) {
                 _id: m._id,
                 role: m.role,
                 content: m.content,
+                suggestion: m.suggestion,
                 score: m.score,
                 createdAt: m.createdAt,
             }));
@@ -189,6 +212,8 @@ function Chat({ mentors }: ChatProps) {
                                 key={i}
                                 message={message}
                                 onSpeak={speak}
+                                handleHelp={handleHelp}
+                                loadingSuggestion={loadingSuggestion}
                                 currentSpeakingId={currentSpeakingId}
                                 stop={stop}
                                 isSpeaking={isSpeaking}
@@ -210,7 +235,14 @@ function Chat({ mentors }: ChatProps) {
                         {isTyping && <TypingIndicator />}
                         <div ref={bottomRef} className='visibility:hidden' />
                     </section>
-                    <ChatForm input={input} handleInputChange={handleInputChange} handleSend={handleSend} setInput={setInput} />
+                    <ChatForm
+                        input={input}
+                        loadingSuggestion={loadingSuggestion}
+                        isTyping={isTyping}
+                        handleInputChange={handleInputChange}
+                        handleSend={handleSend}
+                        setInput={setInput}
+                    />
                 </div>
                 <Loader isLoading={isDeletingRecord} />
             </div>
