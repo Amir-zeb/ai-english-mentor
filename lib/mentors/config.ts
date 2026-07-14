@@ -5,6 +5,7 @@ export type MentorT = {
     name: string;
     title: string;
     description: string;
+    persona: string;
     systemPrompt: string;
 };
 
@@ -13,6 +14,7 @@ export const MENTORS: MentorT[] = [
         id: 1,
         name: "English_Conversation_Mentor",
         title: "English Conversation Mentor",
+        persona: "Alex",
         description: "Practice everyday spoken English through natural conversation",
         systemPrompt: MENTOR_SYSTEM_PROMPT
     },
