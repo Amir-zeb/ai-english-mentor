@@ -4,12 +4,21 @@ import { toast } from "sonner";
 
 type ChatFormProps = {
     input: string;
+    isTyping: boolean;
+    loadingSuggestion: boolean;
     handleSend: (event: React.FormEvent<HTMLFormElement>) => void;
     handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
     setInput: React.Dispatch<React.SetStateAction<string>>;
 };
 
-export default function ChatForm({ input, handleSend, setInput, handleInputChange }: ChatFormProps) {
+export default function ChatForm({
+    input,
+    isTyping,
+    loadingSuggestion,
+    handleSend,
+    setInput,
+    handleInputChange
+}: ChatFormProps) {
     const { isListening, isSupported, startListening, stopListening } = useSpeechRecognition(
         handleTranscript,
         (error) => {
@@ -33,6 +42,7 @@ export default function ChatForm({ input, handleSend, setInput, handleInputChang
             <div className="flex flex-col gap-3 rounded-2xl border border-white/10 p-3 sm:flex-row sm:items-center">
                 <input
                     value={input}
+                    disabled={isListening || isTyping || loadingSuggestion}
                     onChange={handleInputChange}
                     placeholder="Type your message..."
                     className="flex-1 px-4 py-3 text-sm text-white outline-none ring-0"
@@ -40,19 +50,21 @@ export default function ChatForm({ input, handleSend, setInput, handleInputChang
                 {isSupported && (
                     <button
                         type="button"
+                        disabled={loadingSuggestion || isTyping}
                         onClick={isListening ? stopListening : startListening}
                         title={isListening ? "Stop listening" : "Speak your message"}
-                        className={`rounded-xl p-3 transition ${isListening
-                                ? "bg-red-500/20 text-red-400 animate-pulse"
-                                : "text-white/50 hover:text-white"
+                        className={`rounded-xl p-3 transition disabled:cursor-not-allowed hover:opacity-50 ${isListening
+                            ? "bg-red-500/20 text-red-400 animate-pulse"
+                            : "text-white/50 hover:text-white"
                             }`}
                     >
                         {isListening ? <MdMicOff size={18} /> : <MdMic size={18} />}
                     </button>
                 )}
                 <button
+                    disabled={loadingSuggestion || isTyping || isListening}
                     type="submit"
-                    className="rounded-xl bg-linear-to-r from-slate-800/30 to-slate-900 px-4 py-3 text-sm font-semibold text-white opacity-30 transition hover:opacity-100"
+                    className="btn-primary"
                 >
                     Send
                 </button>
