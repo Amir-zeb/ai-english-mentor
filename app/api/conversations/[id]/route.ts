@@ -104,7 +104,7 @@ export async function GET(
 
     const messages = await Messages.find({ conversationId: id })
         .sort({ createdAt: 1 })
-        .select("_id role content createdAt score suggestion")
+        .select("_id role content createdAt score suggestion feedback")
         .lean();
 
     return NextResponse.json({ conversation, messages });

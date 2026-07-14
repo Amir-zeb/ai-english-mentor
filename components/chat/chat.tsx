@@ -151,6 +151,7 @@ function Chat({ mentors }: ChatProps) {
                 role: m.role,
                 content: m.content,
                 suggestion: m.suggestion,
+                feedback: m.feedback,
                 score: m.score,
                 createdAt: m.createdAt,
             }));
