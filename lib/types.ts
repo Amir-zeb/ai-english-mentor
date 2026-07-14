@@ -19,6 +19,7 @@ export type ConversationMessageT = {
     content: string;
     createdAt?: string;
     suggestion?: string;
+    feedback?: string;
     score?: number;
     conversationId?: string;
 };
