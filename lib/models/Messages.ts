@@ -7,6 +7,7 @@ export interface IMessage {
     score: number,
     content: string;
     suggestion: string;
+    feedback: string;
     createdAt: Date;
 }
 
@@ -16,6 +17,7 @@ const MessageSchema = new Schema<IMessage>(
         role: { type: String, enum: ["user", "assistant", "system"], required: true },
         content: { type: String, required: true, trim: true },
         suggestion: { type: String, trim: true },
+        feedback: { type: String, trim: true },
         score: { type: Number, required: false }
     },
     { timestamps: { createdAt: true, updatedAt: false } }
