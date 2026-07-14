@@ -6,6 +6,7 @@ export interface IMessage {
     role: "user" | "assistant" | "system";
     score: number,
     content: string;
+    suggestion: string;
     createdAt: Date;
 }
 
@@ -14,6 +15,7 @@ const MessageSchema = new Schema<IMessage>(
         conversationId: { type: Schema.Types.ObjectId, ref: "Conversation", required: true },
         role: { type: String, enum: ["user", "assistant", "system"], required: true },
         content: { type: String, required: true, trim: true },
+        suggestion: { type: String, trim: true },
         score: { type: Number, required: false }
     },
     { timestamps: { createdAt: true, updatedAt: false } }
