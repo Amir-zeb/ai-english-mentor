@@ -1,13 +1,16 @@
 import { ROLES } from "@/lib/constant";
 import { ConversationMessageT } from "@/lib/types";
-import { MdStop, MdVolumeUp } from "react-icons/md";
+import { useState } from "react";
+import { MdLightbulbOutline, MdStop, MdVolumeUp } from "react-icons/md";
 
 type ChatMessageProps = {
-    message: ConversationMessageT,
-    isSpeaking: boolean | null
-    currentSpeakingId: string | null,
-    onSpeak: (text: string, id: string) => void,
-    stop: () => void,
+    message: ConversationMessageT;
+    isSpeaking: boolean | null;
+    loadingSuggestion: boolean;
+    currentSpeakingId: string | null;
+    onSpeak: (text: string, id: string) => void;
+    stop: () => void;
+    handleHelp: (id: string) => void;
 }
 
 function getScoreColor(score: number): string {
@@ -24,7 +27,15 @@ function formatTime(dateString?: string): string {
     });
 }
 
-export default function ChatMessage({ message, isSpeaking, currentSpeakingId, stop, onSpeak }: ChatMessageProps) {
+export default function ChatMessage({
+    message,
+    isSpeaking,
+    loadingSuggestion,
+    currentSpeakingId,
+    stop,
+    onSpeak,
+    handleHelp
+}: ChatMessageProps) {
     const isUser = message.role === ROLES.USER;
     const hasScore = isUser && typeof message.score === "number";
     const isThisMessageSpeaking = isSpeaking && currentSpeakingId === message._id;
@@ -39,6 +50,11 @@ export default function ChatMessage({ message, isSpeaking, currentSpeakingId, st
                         }`}
                 >
                     <p>{message.content}</p>
+                    {message?.suggestion && (
+                        <p className="mt-1 max-w-[80%] rounded-lg bg-white/5 px-3 py-2 text-xs italic text-white/60">
+                            💡 Try: "{message?.suggestion}"
+                        </p>
+                    )}
                     {hasScore && (
                         <span
                             title={`Fluency score: ${message.score}/100`}
@@ -62,6 +78,16 @@ export default function ChatMessage({ message, isSpeaking, currentSpeakingId, st
                             title={isThisMessageSpeaking ? "Stop" : "Play message"}
                         >
                             {isThisMessageSpeaking ? <MdStop size={14} /> : <MdVolumeUp size={14} />}
+                        </button>
+                    )}
+                    {!isUser && (
+                        <button
+                            onClick={() => handleHelp(message._id as string)}
+                            disabled={loadingSuggestion}
+                            className={`hover:text-white ${message.suggestion ? "text-blue-400" : "text-white/40"}`}
+                            title="Not sure how to reply?"
+                        >
+                            <MdLightbulbOutline size={14} />
                         </button>
                     )}
                 </div>
