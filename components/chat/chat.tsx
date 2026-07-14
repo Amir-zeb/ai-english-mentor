@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from "react";
-import { sendMessage } from "@/lib/services/chat.service";
+import { sendMessage, startConversation } from "@/lib/services/chat.service";
 import { deleteConversationMessages, getConversationMessages, getConversations } from "@/lib/services/conversations.service";
 import ChatMessage from "./chatMessage";
 import TypingIndicator from "./typingIndicator";
@@ -98,6 +98,24 @@ function Chat({ mentors }: ChatProps) {
         }
     };
 
+    const handleStartConversation = async () => {
+        if (!activeMentorName) return;
+        setIsTyping(true);
+        try {
+            const { conversationId, assistantMessage } = await startConversation(activeMentorName);
+            setActiveConversationId(conversationId);
+            setMessages([assistantMessage]);
+            getConversationHistory();
+            if (autoSpeak) {
+                speak(assistantMessage.content, assistantMessage._id);
+            }
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to start conversation");
+        } finally {
+            setIsTyping(false);
+        }
+    };
+
     const handleSelectConversation = async (id: string) => {
         if (id === activeConversationId) return; // no-op if already active
 
@@ -176,14 +194,23 @@ function Chat({ mentors }: ChatProps) {
                                 isSpeaking={isSpeaking}
                             />
                         )) :
-                            <div>
-                                <p className="text-center">No messages yet. Start the conversation!</p>
-                            </div>
+                            (!activeConversationId && !isTyping && (
+                                <div className="flex flex-1 flex-col items-center justify-center gap-3">
+                                    <p className="text-white/60">{activeMentor?.description}</p>
+                                    <button
+                                        type="button"
+                                        onClick={handleStartConversation}
+                                        className="rounded-xl bg-slate-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
+                                    >
+                                        Start Conversation
+                                    </button>
+                                </div>
+                            ))
                         }
                         {isTyping && <TypingIndicator />}
                         <div ref={bottomRef} className='visibility:hidden' />
                     </section>
-                    <ChatForm input={input} handleInputChange={handleInputChange} handleSend={handleSend} />
+                    <ChatForm input={input} handleInputChange={handleInputChange} handleSend={handleSend} setInput={setInput} />
                 </div>
                 <Loader isLoading={isDeletingRecord} />
             </div>

@@ -47,6 +47,7 @@ export type MentorSummaryT = {
     id: number;
     name: string;
     title: string;
+    persona: string;
     description: string;
 };
 
