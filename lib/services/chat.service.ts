@@ -26,9 +26,24 @@ export async function startConversation(mentorName: string): Promise<{
     });
 
     if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
+        const data = await response.json();
         throw new Error(data.error || "Failed to start conversation");
     }
 
+    return response.json();
+}
+
+export async function getSuggestion(messageId: string): Promise<{
+    assistantMessage: ConversationMessageT
+}> {
+    const response = await fetch("/api/chat/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageId }),
+    });
+    if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to get suggestion");
+    }
     return response.json();
 }
