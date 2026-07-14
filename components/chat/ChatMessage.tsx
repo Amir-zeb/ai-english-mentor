@@ -1,7 +1,7 @@
 import { ROLES } from "@/lib/constant";
 import { ConversationMessageT } from "@/lib/types";
-import { useState } from "react";
 import { MdLightbulbOutline, MdStop, MdVolumeUp } from "react-icons/md";
+import { toast } from "sonner";
 
 type ChatMessageProps = {
     message: ConversationMessageT;
@@ -40,19 +40,40 @@ export default function ChatMessage({
     const hasScore = isUser && typeof message.score === "number";
     const isThisMessageSpeaking = isSpeaking && currentSpeakingId === message._id;
 
+    async function copyToClipboard(text: string): Promise<void> {
+        try {
+            await navigator.clipboard.writeText(text);
+            console.log('Text copied to clipboard successfully!');
+            toast.message("Text copied to clipboard!");
+
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+        }
+    }
+
     return (
         <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
             <div className={`flex max-w-[80%] flex-col sm:max-w-[70%] ${isUser ? "items-end" : "items-start"}`}>
                 <div
-                    className={`relative text-sm ${isUser
+                    className={`relative text-md ${isUser
                         ? "rounded-2xl bg-slate-800/90 px-4 py-3 pr-6 text-white shadow-md"
                         : ""
                         }`}
                 >
                     <p>{message.content}</p>
+                    {isUser && message.feedback && (
+                        <p className="mt-1 w-fit inline-block rounded-lg bg-white/5 px-3 py-2 text-sm text-white">
+                            📝 {message.feedback}
+                        </p>
+                    )}
                     {message?.suggestion && (
-                        <p className="mt-1 max-w-[80%] rounded-lg bg-white/5 px-3 py-2 text-xs italic text-white/60">
+                        <p className="mt-1 w-fit rounded-lg bg-white/5 px-3 py-2 text-sm italic text-white/70">
                             💡 Try: "{message?.suggestion}"
+                            &nbsp;<button
+                                type="button"
+                                onClick={() => { copyToClipboard(message?.suggestion as string) }}
+                                className="hover:text-white underline underline-offset-4"
+                            >copy</button>
                         </p>
                     )}
                     {hasScore && (
@@ -84,7 +105,7 @@ export default function ChatMessage({
                         <button
                             onClick={() => handleHelp(message._id as string)}
                             disabled={loadingSuggestion}
-                            className={`hover:text-white ${message.suggestion ? "text-blue-400" : "text-white/40"}`}
+                            className={`hover:text-white disabled:opacity-50 disabled:pointer-events-none ${message.suggestion ? "text-blue-400" : "text-white/40"}`}
                             title="Not sure how to reply?"
                         >
                             <MdLightbulbOutline size={14} />
