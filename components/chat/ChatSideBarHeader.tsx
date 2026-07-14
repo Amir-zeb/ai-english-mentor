@@ -9,7 +9,7 @@ type ChatSideBarHeaderProps = {
 export default function ChatSideBarHeader({ title, openModel }: ChatSideBarHeaderProps) {
     return (
         <div className="p-2 border-b border-white/10">
-            <div className="flex items-center justify-between border-b border-white/10 p-2">
+            <div className="flex items-center justify-between p-2">
                 <h4 className="text-lg font-bold">{title}</h4>
                 <button
                     type="button"
