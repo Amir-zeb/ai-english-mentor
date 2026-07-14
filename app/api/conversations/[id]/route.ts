@@ -60,6 +60,9 @@ import { getUserId } from "@/lib/auth/getUserId";
  *                       content:
  *                         type: string
  *                         example: Hello, how are you?
+ *                       suggestion:
+ *                         type: string
+ *                         example: Hello, im good. How are you sunshine?
  *                       createdAt:
  *                         type: string
  *                         format: date-time
@@ -101,7 +104,7 @@ export async function GET(
 
     const messages = await Messages.find({ conversationId: id })
         .sort({ createdAt: 1 })
-        .select("_id role content createdAt score")
+        .select("_id role content createdAt score suggestion")
         .lean();
 
     return NextResponse.json({ conversation, messages });
