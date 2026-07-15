@@ -1,6 +1,4 @@
-import { ROLES } from "./constant";
-
-export type ChatRole = typeof ROLES[keyof typeof ROLES];
+export type ChatRole = 'user' | 'assistant' | 'system';
 
 export type ChatResponseBody = {
     userMessage: ConversationMessageT,
@@ -49,7 +47,7 @@ export type MentorSummaryT = {
     id: number;
     name: string;
     title: string;
-    persona: string;
+    personaName: string;
     description: string;
 };
 
