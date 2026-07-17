@@ -1,8 +1,8 @@
 export type ChatRole = 'user' | 'assistant' | 'system';
 
 export type ChatResponseBody = {
-    userMessage: ConversationMessageT,
-    assistantMessage: ConversationMessageT,
+    userMessage: ChatMessageT,
+    assistantMessage: ChatMessageT,
 };
 
 export type ConversationSummaryT = {
@@ -11,7 +11,7 @@ export type ConversationSummaryT = {
     updatedAt: string;
 };
 
-export type ConversationMessageT = {
+export type ChatMessageT = {
     _id?: string;
     role: ChatRole;
     content: string;
@@ -27,7 +27,7 @@ export type ConversationDetailT = {
         _id: string;
         title: string;
     };
-    messages: ConversationMessageT[];
+    messages: ChatMessageT[];
 };
 
 export type ChatRequestBodyT = {
@@ -52,4 +52,26 @@ export type MentorSummaryT = {
 };
 
 export type IDParamFunctionT = (id: string) => void;
+
 export type VoidFunctionT = () => void;
+
+export type ScoreBandCounts = { red: number; yellow: number; green: number };
+
+export type PeriodBucket = {
+    label: string;
+    scoreBands: ScoreBandCounts;
+    avgScore: number | null;
+    totalMessages: number;
+    suggestionsUsed: number;
+};
+
+export type MentorStats = {
+    mentorName: string;
+    mentorTitle: string;
+    weekly: PeriodBucket[];
+    monthly: PeriodBucket[];
+};
+
+export type DashboardStats = {
+    mentors: MentorStats[];
+};

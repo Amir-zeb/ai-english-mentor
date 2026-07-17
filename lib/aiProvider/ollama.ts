@@ -1,4 +1,4 @@
-import { ConversationMessageT } from "@/lib/types";
+import { ChatMessageT } from "@/lib/types";
 
 const OLLAMA_URL = process.env.OLLAMA_URL ?? "http://localhost:11434";
 const MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b";
@@ -19,7 +19,7 @@ const RESPONSE_SCHEMA = {
     required: ["reply", "score"], // feedback stays optional — casual mentor won't use it
 };
 
-export async function getChatCompletion(messages: Omit<ConversationMessageT, "score">[]): Promise<AICompletionResult> {
+export async function getChatCompletion(messages: Omit<ChatMessageT, "score">[]): Promise<AICompletionResult> {
     const response = await fetch(`${OLLAMA_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

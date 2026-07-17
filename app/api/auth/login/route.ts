@@ -77,6 +77,16 @@ import { signToken } from "@/lib/auth/jwt";
  *                 error:
  *                   type: string
  *                   example: Invalid username or password
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal server error
  */
 export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
@@ -89,37 +99,42 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    await connectDB();
+    try {
+        await connectDB();
 
-    const user = await User.findOne({ username: username.toLowerCase().trim() });
-    if (!user) {
-        return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
+        const user = await User.findOne({ username: username.toLowerCase().trim() });
+        if (!user) {
+            return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
+        }
+
+        const isValid = await verifyPassword(password, user.passwordHash);
+        if (!isValid) {
+            return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
+        }
+
+        const token = await signToken({
+            userId: user._id.toString(),
+            username: user.username,
+        });
+
+        const response = NextResponse.json({
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            username: user.username,
+        });
+
+        response.cookies.set("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+            maxAge: 60 * 60 * 24 * 7, // 7 days, matches JWT expiry
+        });
+
+        return response
+
+    } catch (error) {
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
-
-    const isValid = await verifyPassword(password, user.passwordHash);
-    if (!isValid) {
-        return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
-    }
-
-    const token = await signToken({
-        userId: user._id.toString(),
-        username: user.username,
-    });
-
-    const response = NextResponse.json({
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        username: user.username,
-    });
-
-    response.cookies.set("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 7, // 7 days, matches JWT expiry
-    });
-
-    return response;
 }

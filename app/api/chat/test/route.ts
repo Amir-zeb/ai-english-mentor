@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getChatCompletion } from "@/lib/aiProvider/ollama";
 import { ROLES } from "@/lib/constant";
-import { ChatRequestBodyT, ConversationMessageT } from "@/lib/types";
+import { ChatRequestBodyT, ChatMessageT } from "@/lib/types";
 import { getMentorByName } from "@/lib/mentors/config";
 
 /**
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     }
 
     // build full message list for the AI call
-    const messagesForAI: ConversationMessageT[] = [
+    const messagesForAI: ChatMessageT[] = [
         { role: ROLES.SYSTEM, content: mentor.systemPrompt },
         { role: ROLES.USER, content: message },
     ];

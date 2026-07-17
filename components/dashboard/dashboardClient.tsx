@@ -1,11 +1,11 @@
 "use client";
 
+import { DashboardStats, PeriodBucket } from "@/lib/types";
 import { useState, useMemo } from "react";
 import {
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
     LineChart, Line, Legend, CartesianGrid,
 } from "recharts";
-import { DashboardStats, PeriodBucket } from "@/lib/stats/getDashboardStats";
 
 type RangeT = "weekly" | "monthly";
 

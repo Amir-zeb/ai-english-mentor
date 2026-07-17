@@ -3,29 +3,9 @@ import { Messages } from "@/lib/models/Messages";
 import { ConversationHistory } from "@/lib/models/ConversationHistory";
 import { MENTORS } from "@/lib/mentors/config";
 import { ROLES } from "@/lib/constant";
+import { DashboardStats, MentorStats, PeriodBucket, ScoreBandCounts } from "../types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-type ScoreBandCounts = { red: number; yellow: number; green: number };
-
-export type PeriodBucket = {
-    label: string;
-    scoreBands: ScoreBandCounts;
-    avgScore: number | null;
-    totalMessages: number;
-    suggestionsUsed: number;
-};
-
-export type MentorStats = {
-    mentorName: string;
-    mentorTitle: string;
-    weekly: PeriodBucket[];
-    monthly: PeriodBucket[];
-};
-
-export type DashboardStats = {
-    mentors: MentorStats[];
-};
 
 function startOfDay(d: Date): Date {
     const nd = new Date(d);

@@ -1,4 +1,4 @@
-import { ChatResponseBody, ConversationMessageT } from "../types";
+import { ChatResponseBody, ChatMessageT } from "../types";
 
 export async function sendMessage(conversationId: string | null, message: string, mentorName: string): Promise<ChatResponseBody> {
     const response = await fetch('/api/chat', {
@@ -17,7 +17,7 @@ export async function sendMessage(conversationId: string | null, message: string
 
 export async function startConversation(mentorName: string): Promise<{
     conversationId: string;
-    assistantMessage: ConversationMessageT;
+    assistantMessage: ChatMessageT;
 }> {
     const response = await fetch("/api/chat/start", {
         method: "POST",
@@ -34,7 +34,7 @@ export async function startConversation(mentorName: string): Promise<{
 }
 
 export async function getSuggestion(messageId: string): Promise<{
-    assistantMessage: ConversationMessageT
+    assistantMessage: ChatMessageT
 }> {
     const response = await fetch("/api/chat/suggest", {
         method: "POST",

@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/db/connect";
 import { Messages } from "@/lib/models/Messages";
 import { getChatCompletion } from "@/lib/aiProvider/ollama";
 import { ROLES } from "@/lib/constant";
-import { ConversationMessageT } from "@/lib/types";
+import { ChatMessageT } from "@/lib/types";
 import { getUserId } from "@/lib/auth/getUserId";
 import { User } from "@/lib/models/User";
 import { ConversationHistory } from "@/lib/models/ConversationHistory";
@@ -69,7 +69,7 @@ import { getMentorByName } from "@/lib/mentors/config";
  *                       format: date-time
  *                       example: 2026-07-14T10:30:00.000Z
  *       400:
- *         description: Missing messageId.
+ *         description: messageId is missing or the mentor is invalid.
  *         content:
  *           application/json:
  *             schema:
@@ -79,7 +79,7 @@ import { getMentorByName } from "@/lib/mentors/config";
  *                   type: string
  *                   example: messageId is required
  *       404:
- *         description: Message not found or the message is not from the assistant.
+ *         description: Message, conversation, or user not found.
  *         content:
  *           application/json:
  *             schema:
@@ -87,7 +87,7 @@ import { getMentorByName } from "@/lib/mentors/config";
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Message not found
+ *                   example: messageId is missing or the mentor is invalid.
  *       500:
  *         description: Failed to generate suggestion.
  *         content:
@@ -108,8 +108,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "messageId is required" }, { status: 400 });
     }
 
-    await connectDB();
     try {
+        await connectDB();
 
         const message = await Messages.findById(messageId);
         if (!message || message.role !== ROLES.ASSISTANT) {
@@ -146,17 +146,17 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Invalid mentor" }, { status: 400 });
         }
 
-        const user = await User.findById(userId).select('username').lean()
+        const user = await User.findById(userId).select("firstName").lean()
         if (!user) {
-            return NextResponse.json({ error: "user not found" }, { status: 404 });
+            return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        const messagesForAI: ConversationMessageT[] = [
+        const messagesForAI: ChatMessageT[] = [
             {
                 role: ROLES.SYSTEM,
                 content: `${mentor.systemPrompt}\n\nThe person you're talking to is named ${user.firstName}. Address them by name naturally sometimes (not every message) — like a friend would.`
             },
-            ...recentHistory.map((m) => ({ role: m.role, content: m.content } as ConversationMessageT)),
+            ...recentHistory.map((m) => ({ role: m.role, content: m.content } as ChatMessageT)),
             {
                 role: ROLES.USER,
                 content: "[The person you're chatting with is stuck and doesn't know how to reply. Suggest ONE short, natural, casual example reply they could send, written from their point of view. Keep it simple, 1 sentence.]",
@@ -175,13 +175,12 @@ export async function POST(req: NextRequest) {
                 role: message.role,
                 content: message.content,
                 suggestion: message.suggestion,
-                conversationId: message.conversationId,
+                conversationId: message.conversationId.toString(),
                 createdAt: message.createdAt.toISOString(),
             },
         });
 
     } catch (error) {
-        console.error("Suggestion error:", error);
         return NextResponse.json({ error: "Failed to generate suggestion" }, { status: 500 });
     }
 }

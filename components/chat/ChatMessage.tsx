@@ -1,10 +1,10 @@
 import { ROLES } from "@/lib/constant";
-import { ConversationMessageT } from "@/lib/types";
+import { ChatMessageT } from "@/lib/types";
 import { MdLightbulbOutline, MdStop, MdVolumeUp } from "react-icons/md";
 import { toast } from "sonner";
 
 type ChatMessageProps = {
-    message: ConversationMessageT;
+    message: ChatMessageT;
     isSpeaking: boolean | null;
     loadingSuggestion: boolean;
     currentSpeakingId: string | null;

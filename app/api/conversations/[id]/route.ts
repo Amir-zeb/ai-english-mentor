@@ -9,9 +9,9 @@ import { getUserId } from "@/lib/auth/getUserId";
  * /api/conversations/{id}:
  *   get:
  *     tags:
- *       - ConversationHistory
+ *       - Conversations
  *     summary: Get a conversation and its messages
- *     description: Returns a conversation along with all of its messages.
+ *     description: Returns the authenticated user's conversation along with all of its messages sorted by creation time.
  *     parameters:
  *       - in: path
  *         name: id
@@ -50,6 +50,9 @@ import { getUserId } from "@/lib/auth/getUserId";
  *                   items:
  *                     type: object
  *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         example: 6847d52d2f5d8c7f3d6a9b13
  *                       role:
  *                         type: string
  *                         enum:
@@ -63,6 +66,12 @@ import { getUserId } from "@/lib/auth/getUserId";
  *                       suggestion:
  *                         type: string
  *                         example: Hello, im good. How are you sunshine?
+ *                       feedback:
+ *                         type: string
+ *                         example: Great sentence! Try using a contraction like "I'm".
+ *                       score:
+ *                         type: number
+ *                         example: 95
  *                       createdAt:
  *                         type: string
  *                         format: date-time
@@ -95,19 +104,27 @@ export async function GET(
 ) {
     const { id } = await params;
     const userId = getUserId(req);
-    await connectDB();
+    try {
+        await connectDB();
 
-    const conversation = await ConversationHistory.findById(id, userId).lean();
-    if (!conversation) {
-        return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+        const conversation = await ConversationHistory.findOne({
+            _id: id,
+            userId: userId
+        }).lean();
+
+        if (!conversation) {
+            return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+        }
+
+        const messages = await Messages.find({ conversationId: id })
+            .sort({ createdAt: 1 })
+            .select("_id role content createdAt score suggestion feedback")
+            .lean();
+
+        return NextResponse.json({ conversation, messages });
+    } catch (error) {
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
-
-    const messages = await Messages.find({ conversationId: id })
-        .sort({ createdAt: 1 })
-        .select("_id role content createdAt score suggestion feedback")
-        .lean();
-
-    return NextResponse.json({ conversation, messages });
 }
 
 /**
@@ -115,9 +132,9 @@ export async function GET(
  * /api/conversations/{id}:
  *   delete:
  *     tags:
- *       - ConversationHistory
+ *       - Conversations
  *     summary: Delete a conversation
- *     description: Deletes a conversation and all messages associated with it.
+ *     description: Deletes the specified conversation and all associated messages.
  *     parameters:
  *       - in: path
  *         name: id
@@ -171,17 +188,20 @@ export async function DELETE(
 
         await connectDB();
 
-        const conversation = await ConversationHistory.findByIdAndDelete(id);
+        const conversation = await ConversationHistory.findOneAndDelete({
+            _id: id,
+            userId,
+        });
+
         if (!conversation) {
             return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
         }
 
         // clean up orphaned messages belonging to this conversation
-        await Messages.deleteMany({ conversationId: id, userId });
+        await Messages.deleteMany({ conversationId: id });
 
         return NextResponse.json({ success: true, message: "Conversation deleted successfully" });
     } catch (error) {
-        console.error("Delete conversation error:", error);
         return NextResponse.json({ error: "Failed to delete conversation" }, { status: 500 });
     }
 }

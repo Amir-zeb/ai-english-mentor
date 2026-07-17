@@ -1,5 +1,5 @@
-export const ROLES: { [key: string]: string } = {
+export const ROLES = {
     USER: 'user',
     ASSISTANT: 'assistant',
     SYSTEM: 'system'
-}
+} as const;

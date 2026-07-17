@@ -10,10 +10,11 @@ const MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b";
  * /api/conversations:
  *   post:
  *     tags:
- *       - ConversationHistory
+ *       - Conversations
  *     summary: Create a new conversation
  *     description: |
- *       Creates a new conversation with an initial title and AI model.
+ *       Creates a new conversation for the authenticated user.
+ *       The conversation is associated with the specified mentor.
  *     requestBody:
  *       required: true
  *       content:
@@ -29,10 +30,10 @@ const MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b";
  *                 example: Hello, how are you?
  *               mentorName:
  *                 type: string
- *                 example: English_mentor
+ *                 example: English_Conversation_Mentor
  *     responses:
  *       200:
- *         description: Message sent and response received.
+ *         description: Conversation created successfully.
  *         content:
  *           application/json:
  *             schema:
@@ -49,7 +50,7 @@ const MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b";
  *                   format: date-time
  *                   example: 2023-01-01T00:00:00.000Z
  *       400:
- *         description: Missing required field.
+ *         description: title is missing or invalid.
  *         content:
  *           application/json:
  *             schema:
@@ -75,24 +76,31 @@ export async function POST(req: NextRequest) {
     const { title, model, mentorName } = body;
     const userId = getUserId(req);
 
-    if (!title || typeof title !== "string" && !mentorName || typeof mentorName !== "string") {
+    if (!title ||
+        !mentorName ||
+        typeof title !== "string" ||
+        typeof mentorName !== "string") {
         return NextResponse.json({ error: "title and mentorName is required" }, { status: 400 });
     }
 
-    await connectDB();
+    try {
+        await connectDB();
 
-    const conversations = await ConversationHistory.create({
-        userId,
-        title: title.trim().slice(0, 100), // guard against a huge first message becoming the title
-        model: model ?? MODEL,
-        mentorName,
-    });
+        const conversations = await ConversationHistory.create({
+            userId,
+            title: title.trim().slice(0, 100), // guard against a huge first message becoming the title
+            model: model ?? MODEL,
+            mentorName,
+        });
 
-    return NextResponse.json({
-        conversationId: conversations._id,
-        title: conversations.title,
-        createdAt: conversations.createdAt,
-    });
+        return NextResponse.json({
+            conversationId: conversations._id,
+            title: conversations.title,
+            createdAt: conversations.createdAt,
+        });
+    } catch (error) {
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
 }
 
 /**
@@ -100,9 +108,9 @@ export async function POST(req: NextRequest) {
  * /api/conversations:
  *   get:
  *     tags:
- *       - ConversationHistory
- *     summary: Get all conversations
- *     description: Returns a list of all conversations sorted by the most recently updated.
+ *       - Conversations
+ *     summary: Get user's conversations
+ *     description: Returns the authenticated user's conversations for the specified mentor, sorted by most recently updated.
  *     parameters:
  *       - in: query
  *         name: mentorName
@@ -133,6 +141,16 @@ export async function POST(req: NextRequest) {
  *                         type: string
  *                         format: date-time
  *                         example: 2026-07-09T12:34:56.789Z
+ *       400:
+ *         description: mentorName query parameter is required.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: mentorName is required
  *       500:
  *         description: Internal server error.
  *         content:
@@ -145,15 +163,24 @@ export async function POST(req: NextRequest) {
  *                   example: Internal server error
  */
 export async function GET(req: NextRequest) {
-    await connectDB();
     const { searchParams } = req.nextUrl;
     const mentorName = searchParams.get('mentorName');
-    const userId = getUserId(req);
 
-    const conversations = await ConversationHistory.find({ userId, mentorName })
-        .sort({ updatedAt: -1 })
-        .select("_id title updatedAt")
-        .lean();
+    if (!mentorName) {
+        return NextResponse.json({ error: "mentorName is required" }, { status: 400 });
+    }
 
-    return NextResponse.json({ conversations });
+    try {
+        await connectDB();
+        const userId = getUserId(req);
+
+        const conversations = await ConversationHistory.find({ userId, mentorName })
+            .sort({ updatedAt: -1 })
+            .select("_id title updatedAt")
+            .lean();
+
+        return NextResponse.json({ conversations });
+    } catch (error) {
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
 }

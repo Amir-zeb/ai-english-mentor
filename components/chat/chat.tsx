@@ -4,7 +4,7 @@ import { getSuggestion, sendMessage, startConversation } from "@/lib/services/ch
 import { deleteConversationMessages, getConversationMessages, getConversations } from "@/lib/services/conversations.service";
 import ChatMessage from "./chatMessage";
 import TypingIndicator from "./typingIndicator";
-import { ConversationMessageT, ConversationSummaryT, MentorSummaryT } from "@/lib/types";
+import { ChatMessageT, ConversationSummaryT, MentorSummaryT } from "@/lib/types";
 import { ROLES } from "@/lib/constant";
 import ChatSidebar from "./chatSidebar";
 import ChatForm from "./chatForm";
@@ -21,7 +21,7 @@ export type ChatProps = {
 // this component will be generic for any mentor, and will be implemented later.
 function Chat({ mentors }: ChatProps) {
 
-    const [messages, setMessages] = useState<ConversationMessageT[]>([]);
+    const [messages, setMessages] = useState<ChatMessageT[]>([]);
     const [input, setInput] = useState<string>("");
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const [isDeletingRecord, setIsDeletingRecord] = useState<boolean>(false);
@@ -70,7 +70,7 @@ function Chat({ mentors }: ChatProps) {
 
         if (!input.trim()) return;
 
-        const _userMessage: ConversationMessageT = {
+        const _userMessage: ChatMessageT = {
             role: ROLES.USER,
             content: input.trim(),
         };
@@ -146,7 +146,7 @@ function Chat({ mentors }: ChatProps) {
 
         try {
             const data = await getConversationMessages(id);
-            const loadedMessages: ConversationMessageT[] = data.messages.map((m, index) => ({
+            const loadedMessages: ChatMessageT[] = data.messages.map((m, index) => ({
                 _id: m._id,
                 role: m.role,
                 content: m.content,

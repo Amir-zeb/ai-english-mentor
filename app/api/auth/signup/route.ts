@@ -11,8 +11,8 @@ import { hashPassword } from "@/lib/auth/password";
  *       - Authentication
  *     summary: Register a new user
  *     description: |
- *       Creates a new user account with a unique username.
- *       The password is securely hashed before being stored in the database.
+ *       Creates a new user account using a unique username.
+ *       The password is hashed before being stored.
  *     requestBody:
  *       required: true
  *       content:
@@ -83,6 +83,16 @@ import { hashPassword } from "@/lib/auth/password";
  *                 error:
  *                   type: string
  *                   example: Username already taken
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal server error
  */
 
 export async function POST(req: NextRequest) {
@@ -96,33 +106,37 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    if (password.length < 6) {
+    if (password.trim().length < 6) {
         return NextResponse.json(
             { error: "Password must be at least 6 characters" },
             { status: 400 }
         );
     }
 
-    await connectDB();
+    try {
+        await connectDB();
 
-    const existing = await User.findOne({ username: username.toLowerCase().trim() });
-    if (existing) {
-        return NextResponse.json({ error: "Username already taken" }, { status: 409 });
+        const existing = await User.findOne({ username: username.toLowerCase().trim() });
+        if (existing) {
+            return NextResponse.json({ error: "Username already taken" }, { status: 409 });
+        }
+
+        const passwordHash = await hashPassword(password);
+
+        const user = await User.create({
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            username: username.toLowerCase().trim(),
+            passwordHash,
+        });
+
+        return NextResponse.json({
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            username: user.username,
+        }, { status: 201 });
+    } catch (error) {
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
-
-    const passwordHash = await hashPassword(password);
-
-    const user = await User.create({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        username: username.toLowerCase().trim(),
-        passwordHash,
-    });
-
-    return NextResponse.json({
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        username: user.username,
-    }, { status: 201 });
 }
