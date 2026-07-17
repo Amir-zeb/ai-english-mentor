@@ -1,0 +1,10 @@
+# docker-compose.yml
+services:
+  app:
+    image: ai-english-mentor:latest
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.production
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
