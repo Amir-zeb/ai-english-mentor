@@ -197,6 +197,33 @@ npm run dev
 
 Visit `http://localhost:3000`, sign up for an account, and start a conversation.
 
+
+###  5. (Optional) Run with Docker
+
+The app can also run in a container while MongoDB and Ollama stay on your host machine.
+
+
+**In `.env.local`, point Mongo and Ollama at the host machine instead of `localhost`:**
+
+```env
+
+MONGODB_URI=mongodb://host.docker.internal:27017/ai-english-mentor
+OLLAMA_URL=http://host.docker.internal:11434
+
+```
+
+`host.docker.internal` is how a container reaches services running on your host — `localhost` inside a container refers to the container itself, not your machine. `extra_hosts: host-gateway` makes this hostname resolve correctly across Windows, macOS, and Linux.
+
+Build and run:
+
+```bash
+
+docker build -t ai-english-mentor:latest .
+
+docker compose up -d
+
+```
+
 ----------
 
 ## Project structure
