@@ -19,7 +19,7 @@ export const MENTORS: MentorT[] = [
         name: "English_Conversation_Mentor",
         title: "Casual Conversation Mentor",
         description: "Practice everyday spoken English through relaxed, natural conversation",
-        personaName: "Danish",
+        personaName: "Ali",
         systemPrompt: CASUAL_MENTOR_SYSTEM_PROMPT,
         givesFeedback: false,
         openerPrompt: CASUAL_MENTOR_OPENER_PROMPT,

@@ -30,7 +30,7 @@ The app connects you with an AI "mentor" for open-ended conversation practice. E
 **Mentors**
 | Mentor | Persona | Style |
 |--|--|--|
-| Casual Conversation Mentor | Danish | Relaxed, friendly, everyday topics. Never corrects you — built purely to build speaking confidence. |
+| Casual Conversation Mentor | Ali | Relaxed, friendly, everyday topics. Never corrects you — built purely to build speaking confidence. |
 | Professional English Mentor | Ahmed | Concise, workplace-oriented. Gives direct feedback (grammar, word choice, tone) on every message. |
 
 **Scoring & feedback**
