@@ -179,7 +179,7 @@ MONGODB_URI=mongodb://localhost:27017/ai-english-mentor
 JWT_SECRET=your-random-secret-string
 OLLAMA_URL=http://localhost:11434
 OLLAMA_MODEL=qwen2.5:7b
-PERSONAL_INFO="ira is designed to feel like a real close friend, so personal context helps her sound more natural and specific."
+PERSONAL_INFO="Zira is designed to feel like a real close friend, so personal context helps her sound more natural and specific."
 ```
 
 Generate a secure `JWT_SECRET` with:
