@@ -30,8 +30,9 @@ The app connects you with an AI "mentor" for open-ended conversation practice. E
 **Mentors**
 | Mentor | Persona | Style |
 |--|--|--|
-| Casual Conversation Mentor | Ali | Relaxed, friendly, everyday topics. Never corrects you — built purely to build speaking confidence. |
-| Professional English Mentor | Ahmed | Concise, workplace-oriented. Gives direct feedback (grammar, word choice, tone) on every message. |
+| Casual Conversation Mentor | Mark | Relaxed, friendly, everyday topics. Never corrects you — built purely to build speaking confidence. |
+| Professional English Mentor | David | Concise, workplace-oriented. Gives direct feedback (grammar, word choice, tone) on every message. |
+| Friend | Zira | Warm, playful, and casual. A close-friend style mentor that teases, jokes, and keeps conversation feeling natural and relaxed. |
 
 **Scoring & feedback**
 
@@ -178,7 +179,7 @@ MONGODB_URI=mongodb://localhost:27017/ai-english-mentor
 JWT_SECRET=your-random-secret-string
 OLLAMA_URL=http://localhost:11434
 OLLAMA_MODEL=qwen2.5:7b
-
+PERSONAL_INFO="ira is designed to feel like a real close friend, so personal context helps her sound more natural and specific."
 ```
 
 Generate a secure `JWT_SECRET` with:
