@@ -47,6 +47,7 @@ export type MentorSummaryT = {
     id: number;
     name: string;
     title: string;
+    voiceURI: string;
     personaName: string;
     description: string;
 };

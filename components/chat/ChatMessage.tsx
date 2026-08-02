@@ -8,7 +8,8 @@ type ChatMessageProps = {
     isSpeaking: boolean | null;
     loadingSuggestion: boolean;
     currentSpeakingId: string | null;
-    onSpeak: (text: string, id: string) => void;
+    voiceURI?: string;
+    onSpeak: (text: string, id: string, voiceURI?: string) => void;
     stop: () => void;
     handleHelp: (id: string) => void;
 }
@@ -34,7 +35,8 @@ export default function ChatMessage({
     currentSpeakingId,
     stop,
     onSpeak,
-    handleHelp
+    handleHelp,
+    voiceURI
 }: ChatMessageProps) {
     const isUser = message.role === ROLES.USER;
     const hasScore = isUser && typeof message.score === "number";
@@ -93,7 +95,7 @@ export default function ChatMessage({
                         <button
                             type="button"
                             onClick={() =>
-                                isThisMessageSpeaking ? stop?.() : onSpeak(message.content, message._id as string)
+                                isThisMessageSpeaking ? stop?.() : onSpeak(message.content, message._id as string, voiceURI)
                             }
                             className={`hover:text-white ${isThisMessageSpeaking ? "text-blue-400" : "text-white/40"}`}
                             title={isThisMessageSpeaking ? "Stop" : "Play message"}

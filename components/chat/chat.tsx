@@ -30,6 +30,7 @@ function Chat({ mentors }: ChatProps) {
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
     const [activeMentorName, setActiveMentorName] = useState<string | null>(null);
     const activeMentor: MentorSummaryT | null | undefined = activeMentorName && mentors ? mentors.find((m) => m.name === activeMentorName) : null;
+    const voiceURI = activeMentor?.voiceURI ?? undefined;
     const [isMentorModalOpen, setIsMentorModalOpen] = useState(true);
     const [loadingSuggestion, setLoadingSuggestion] = useState(false);
     const { autoSpeak, setAutoSpeak } = useAutoSpeakPreference();
@@ -90,7 +91,7 @@ function Chat({ mentors }: ChatProps) {
                 getConversationHistory();
             }
             if (autoSpeak) {
-                speak(assistantMessage.content, assistantMessage._id);
+                speak(assistantMessage.content, assistantMessage._id, voiceURI);
             }
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Failed to send message. Please try again.");
@@ -108,7 +109,7 @@ function Chat({ mentors }: ChatProps) {
             setMessages([assistantMessage]);
             getConversationHistory();
             if (autoSpeak) {
-                speak(assistantMessage.content, assistantMessage._id);
+                speak(assistantMessage.content, assistantMessage._id, voiceURI);
             }
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Failed to start conversation");
@@ -213,6 +214,7 @@ function Chat({ mentors }: ChatProps) {
                                 key={i}
                                 message={message}
                                 onSpeak={speak}
+                                voiceURI={voiceURI}
                                 handleHelp={handleHelp}
                                 loadingSuggestion={loadingSuggestion}
                                 currentSpeakingId={currentSpeakingId}

@@ -28,7 +28,7 @@ export default function ChatSidebar({
 }: ChatSideBarProps) {
     return (
         <div className="flex w-64 flex-col border-r border-white/10">
-            <ChatSideBarHeader title={activeMentor?.title ?? null} openModel={openModel} />
+            <ChatSideBarHeader title={activeMentor?.personaName ?? null} openModel={openModel} />
             <div className="flex-1 p-4 overflow-y-auto overflow-x-hidden">
                 <ul className="flex flex-col gap-1">
                     <li
